@@ -211,7 +211,7 @@ func (p *DynamicConnPool) Stats() *Stats {
 	}
 }
 
-// Close closes the pool and clean up all idle connections, no more new Get is permitted are pool closed, but ongoing
+// Close closes the pool and clean up all idle connections, no more new Get is permitted after pool closed, but ongoing
 // process will continue to run with new connection creation
 func (p *DynamicConnPool) Close() error {
 	if !atomic.CompareAndSwapUint32(&p._closed, 0, 1) {
