@@ -60,6 +60,7 @@ type Options struct {
 	PoolFIFO           bool
 	PoolSize           int
 	MinIdleConns       int
+	MaxIdleConns       int
 	MaxConnAge         time.Duration
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
