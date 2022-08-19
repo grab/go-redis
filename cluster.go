@@ -227,6 +227,10 @@ func (n *clusterNode) MarkAsFailing() {
 }
 
 func (n *clusterNode) Failing() bool {
+	if !n.Client.Allow() {
+		return true
+	}
+
 	const timeout = 15 // 15 seconds
 
 	failing := atomic.LoadUint32(&n.failing)

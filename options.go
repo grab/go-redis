@@ -22,6 +22,9 @@ type Limiter interface {
 	// If operation is allowed client must ReportResult of the operation
 	// whether it is a success or a failure.
 	Allow() error
+	// Execute allow a customised wrapper around the actual execution.
+	// this is useful for most common circuit breaker implementation
+	Execute(func() error) error
 	// ReportResult reports the result of the previously allowed operation.
 	// nil indicates a success, non-nil error usually indicates a failure.
 	ReportResult(result error)
