@@ -154,6 +154,7 @@ var _ = Describe("Dynamic Client", func() {
 		client.SetLimiter(limiter)
 		err := client.Conn(ctx).Get(ctx, "this-key-does-not-exist").Err()
 		Expect(err).To(Equal(redis.Nil))
+		Expect(limiter.count).To(Equal(1)) // should call execute wrapper
 		Expect(limiter.errors).To(ContainElement(redis.Nil))
 	})
 })
@@ -161,6 +162,10 @@ var _ = Describe("Dynamic Client", func() {
 var limiterError = fmt.Errorf("limiter error")
 
 type errorLimiter struct {
+}
+
+func (l *errorLimiter) Execute(f func() error) error {
+	return nil
 }
 
 func (*errorLimiter) Allow() error {
@@ -172,7 +177,13 @@ func (*errorLimiter) ReportResult(result error) {
 }
 
 type normalLimiter struct {
+	count  int
 	errors []error
+}
+
+func (l *normalLimiter) Execute(f func() error) error {
+	l.count++
+	return f()
 }
 
 func (*normalLimiter) Allow() error {

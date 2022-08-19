@@ -156,6 +156,14 @@ func (c *baseClient) String() string {
 	return fmt.Sprintf("Redis<%s db:%d>", c.getAddr(), c.opt.DB)
 }
 
+func (c *baseClient) Allow() bool {
+	if limiter := c.opt.Limiter; limiter != nil {
+		return limiter.Allow() == nil
+	}
+
+	return true
+}
+
 func (c *baseClient) newConn(ctx context.Context) (*pool.Conn, error) {
 	cn, err := c.connPool.NewConn(ctx)
 	if err != nil {
@@ -172,25 +180,6 @@ func (c *baseClient) newConn(ctx context.Context) (*pool.Conn, error) {
 }
 
 func (c *baseClient) getConn(ctx context.Context) (*pool.Conn, error) {
-	if c.opt.Limiter != nil {
-		err := c.opt.Limiter.Allow()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	cn, err := c._getConn(ctx)
-	if err != nil {
-		if c.opt.Limiter != nil {
-			c.opt.Limiter.ReportResult(err)
-		}
-		return nil, err
-	}
-
-	return cn, nil
-}
-
-func (c *baseClient) _getConn(ctx context.Context) (*pool.Conn, error) {
 	cn, err := c.connPool.Get(ctx)
 	if err != nil {
 		return nil, err
@@ -257,10 +246,6 @@ func (c *baseClient) initConn(ctx context.Context, cn *pool.Conn) error {
 }
 
 func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) {
-	if c.opt.Limiter != nil {
-		c.opt.Limiter.ReportResult(err)
-	}
-
 	if isBadConn(err, false, c.opt.Addr) {
 		c.connPool.Remove(ctx, cn, err)
 	} else {
@@ -269,6 +254,26 @@ func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) 
 }
 
 func (c *baseClient) withConn(
+	ctx context.Context, fn func(context.Context, *pool.Conn) error,
+) error {
+	limiter := c.opt.Limiter
+	if limiter == nil {
+		return c._withConn(ctx, fn)
+	}
+
+	if err := limiter.Allow(); err != nil {
+		return err
+	}
+
+	err := limiter.Execute(func() error {
+		return c._withConn(ctx, fn)
+	})
+
+	limiter.ReportResult(err)
+	return err
+}
+
+func (c *baseClient) _withConn(
 	ctx context.Context, fn func(context.Context, *pool.Conn) error,
 ) error {
 	cn, err := c.getConn(ctx)
