@@ -15,6 +15,10 @@ const (
 	connReqsQueueSize = 1000000
 
 	minIdleCheckFrequency = time.Second
+
+	// tryDialFrequency: frequency used to try dial underlying resource to check if it is recovered after a consecutive
+	// dial failures are observed.
+	tryDialFrequency = time.Second
 )
 
 type Reaper interface {
@@ -474,6 +478,9 @@ func (p *DynamicConnPool) removeIdleConns(removeCount int) {
 }
 
 func (p *DynamicConnPool) dialConn(ctx context.Context) (*Conn, error) {
+	// When underlying resource experiences some issues, we might observe lots of consecutive dial failure. Once the
+	// accumulated failure count exceeds poolSize, all subsequent dialConn attempts are error out directly to reduce
+	// pressure to the resource. Instead, a background tryDial task is invoked to regularly check if it is recovered.
 	if atomic.LoadUint32(&p.dialErrorsNum) >= uint32(p.opt.PoolSize) {
 		return nil, p.getLastDialError()
 	}
@@ -491,6 +498,8 @@ func (p *DynamicConnPool) dialConn(ctx context.Context) (*Conn, error) {
 	return cn, nil
 }
 
+// tryDial is called when there are consecutive dial failure observed, it then runs a goroutine to dial the resource
+// at tryDialFrequency and check if it is recovered.
 func (p *DynamicConnPool) tryDial() {
 	for {
 		if p.closed() {
@@ -500,7 +509,7 @@ func (p *DynamicConnPool) tryDial() {
 		conn, err := p.opt.Dialer(context.Background())
 		if err != nil {
 			p.setLastDialError(err)
-			time.Sleep(time.Second)
+			time.Sleep(tryDialFrequency)
 			continue
 		}
 
@@ -620,7 +629,11 @@ func (p *DynamicConnPool) ReapStaleConns() (int, error) {
 		}
 		n++
 	}
-	atomic.AddUint32(&p.stats.StaleConns, uint32(n))
+
+	if n > 0 {
+		atomic.AddUint32(&p.stats.StaleConns, uint32(n))
+		p.checkMinIdleConnsLocked()
+	}
 	return n, nil
 }
 

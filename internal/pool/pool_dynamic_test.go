@@ -13,7 +13,7 @@ import (
 	"github.com/go-redis/redis/v8/internal/pool"
 )
 
-func assertPoolStats(pooler pool.Pooler, hits, misses, timeouts, totals, idles, stales uint32) {
+func assertPoolStats(pooler pool.DynamicPooler, hits, misses, timeouts, totals, idles, stales uint32) {
 	Expect(pooler.Stats()).To(Equal(&pool.Stats{
 		Hits:       hits,
 		Misses:     misses,
@@ -135,9 +135,9 @@ var _ = Describe("MinIdleConns", func() {
 	const poolSize, poolTimeout = 100, 100 * time.Millisecond
 	ctx := context.Background()
 	var minIdleConns int
-	var connPool pool.Pooler
+	var connPool pool.DynamicPooler
 
-	newConnPool := func() pool.Pooler {
+	newConnPool := func() pool.DynamicPooler {
 		connPool := pool.NewDynamicConnPool(&pool.Options{
 			Dialer:             dummyDialer,
 			PoolSize:           poolSize,
@@ -275,6 +275,22 @@ var _ = Describe("MinIdleConns", func() {
 				})
 			})
 		})
+
+		Context("after Reap", func() {
+			idleTimeout := time.Millisecond * 100
+			BeforeEach(func() {
+				connPool.SetIdleTimeout(idleTimeout)
+				time.Sleep(idleTimeout + time.Millisecond*5) // After timeout
+				n, err := connPool.ReapStaleConns()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(n).To(Equal(minIdleConns))
+			})
+
+			It("has idle connections", func() {
+				Expect(connPool.Len()).To(Equal(minIdleConns))
+				Expect(connPool.IdleLen()).To(Equal(minIdleConns))
+			})
+		})
 	}
 
 	Context("minIdleConns = 1", func() {
@@ -361,9 +377,9 @@ var _ = Describe("conns reaper", func() {
 			Expect(connPool.Len()).To(Equal(6))
 			Expect(connPool.IdleLen()).To(Equal(6))
 
-			connPool.ReapStaleConns()
-			Expect(connPool.Len()).To(Equal(3))
-			Expect(connPool.IdleLen()).To(Equal(3))
+			n, err := connPool.ReapStaleConns()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(n).To(Equal(3))
 		})
 
 		AfterEach(func() {
@@ -380,9 +396,9 @@ var _ = Describe("conns reaper", func() {
 		})
 
 		It("does not reap fresh connections", func() {
-			connPool.ReapStaleConns()
-			Expect(connPool.Len()).To(Equal(3))
-			Expect(connPool.IdleLen()).To(Equal(3))
+			n, err := connPool.ReapStaleConns()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(n).To(Equal(0))
 		})
 
 		It("stale connections are closed", func() {
@@ -432,7 +448,7 @@ var _ = Describe("conns reaper", func() {
 
 var _ = Describe("race", func() {
 	ctx := context.Background()
-	var connPool pool.Pooler
+	var connPool pool.DynamicPooler
 	var C, N int
 
 	BeforeEach(func() {
@@ -477,7 +493,7 @@ var _ = Describe("race", func() {
 	})
 })
 
-func getConnsExpectNoErr(pooler pool.Pooler, connCount int) []*pool.Conn {
+func getConnsExpectNoErr(pooler pool.DynamicPooler, connCount int) []*pool.Conn {
 	cns := make([]*pool.Conn, connCount)
 	perform(connCount, func(idx int) {
 		cn, err := pooler.Get(context.Background())
@@ -487,7 +503,7 @@ func getConnsExpectNoErr(pooler pool.Pooler, connCount int) []*pool.Conn {
 	return cns
 }
 
-func putConns(pooler pool.Pooler, cns []*pool.Conn) {
+func putConns(pooler pool.DynamicPooler, cns []*pool.Conn) {
 	for _, cn := range cns {
 		pooler.Put(context.Background(), cn)
 	}
@@ -551,7 +567,7 @@ func assertStalesConn(reaper pool.Reaper, staleCount int) {
 }
 
 // use 1 connection and update usedAt timestamp
-func getPutOneConn(pooler pool.Pooler) *pool.Conn {
+func getPutOneConn(pooler pool.DynamicPooler) *pool.Conn {
 	ctx := context.Background()
 	cn, err := pooler.Get(ctx)
 	Expect(err).NotTo(HaveOccurred())
@@ -654,8 +670,7 @@ var _ = Describe("dynamic update", func() {
 
 			time.Sleep(time.Millisecond * 5) // wait for 5ms for idle conn to be created
 
-			// all get request should hit and new idle connections created
-			Expect(int(connPool.Stats().Hits)).To(Equal(minIdleConns + 1))
+			Expect(int(connPool.Stats().Hits)).To(Equal(minIdleConns + 1)) // all get request should hit and new idle connections created
 			Expect(connPool.IdleLen()).To(Equal(minIdleConns + 1))
 		})
 
@@ -678,10 +693,7 @@ var _ = Describe("dynamic update", func() {
 
 			getConnsExpectNoErr(connPool, minIdleConns) // use all connections
 
-			time.Sleep(time.Millisecond * 5) // wait for 5ms for idle conn to be created
-
-			// all get request should hit and new idle connections created
-			Expect(int(connPool.Stats().Hits)).To(Equal(minIdleConns))
+			Expect(int(connPool.Stats().Hits)).To(Equal(minIdleConns)) // all get request should hit and new idle connections created
 			Expect(connPool.IdleLen()).To(Equal(minIdleConns - 1))
 		})
 
@@ -706,7 +718,7 @@ var _ = Describe("dynamic update", func() {
 
 			connPool.SetMaxIdleConns(maxIdleConns - 1)
 
-			Expect(connPool.IdleLen()).To(Equal(maxIdleConns - 1)) // idle conn should not be removed when MaxIdleConns shrinks
+			Expect(connPool.IdleLen()).To(Equal(maxIdleConns - 1)) // idle conn should be removed when MaxIdleConns shrinks
 		})
 
 		It("PoolTimeout changes", func() {
@@ -784,10 +796,6 @@ var _ = Describe("dynamic update", func() {
 		assert := func(idleTimeout time.Duration) {
 			It("check", func() {
 				connPool.SetIdleTimeout(idleTimeout)
-				getPutOneConn(connPool) // create one conn
-
-				time.Sleep(time.Millisecond * 50)
-
 				cn := getPutOneConn(connPool) // Idle stale check is impacted by conn last used time
 				expiredAfter := cn.UsedAt().Add(idleTimeout).Sub(time.Now())
 
@@ -820,7 +828,7 @@ var _ = Describe("dynamic update", func() {
 			MaxIdleConns: 2,
 			IdleTimeout:  idleTimeout,
 		})
-		defer connPool.Close()
+
 		getPutOneConn(connPool) // create one conn
 		Expect(connPool.IdleLen()).To(Equal(1))
 
