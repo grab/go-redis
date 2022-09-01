@@ -308,6 +308,10 @@ func (p *DynamicConnPool) SetIdleTimeout(idleTimeout time.Duration) {
 func (p *DynamicConnPool) SetIdleCheckFrequency(idleCheckFrequency time.Duration) {
 	p.connsMu.Lock()
 	defer p.connsMu.Unlock()
+	if idleCheckFrequency > 0 && idleCheckFrequency < minIdleCheckFrequency {
+		idleCheckFrequency = minIdleCheckFrequency
+	}
+
 	p.opt.IdleCheckFrequency = idleCheckFrequency
 	p.resetReaperLocked() // check if reaper job need to be turned on/off after changes
 }
@@ -585,25 +589,19 @@ func (p *DynamicConnPool) resetReaperLocked() {
 }
 
 func (p *DynamicConnPool) reaper() {
+	ticker := time.NewTicker(p.opt.IdleCheckFrequency)
+	defer ticker.Stop()
+
 	for {
-		if p.opt.IdleCheckFrequency < minIdleCheckFrequency {
-			p.opt.IdleCheckFrequency = minIdleCheckFrequency
-		}
-
-		timer := timers.Get().(*time.Timer)
-		timer.Reset(p.opt.IdleCheckFrequency)
-
 		select {
 		case _, ok := <-p.reaperCh:
-			p.stopPutBackTimer(timer)
 			if !ok {
 				return
 			}
-		case <-timer.C:
-			timers.Put(timer)
+			ticker.Reset(p.opt.IdleCheckFrequency)
+		case <-ticker.C:
 			p.ReapStaleConns()
 		case <-p.closedCh:
-			p.stopPutBackTimer(timer)
 			p.reaperCh = nil
 			return
 		}
@@ -677,31 +675,4 @@ type connReq struct {
 type ctxConnChan struct {
 	ctx      context.Context
 	connChan chan connReq
-}
-
-// connChanQueue: non thread-safe queue to store the connection request, must used with lock
-type connChanQueue []*ctxConnChan
-
-func (s connChanQueue) Len() int {
-	return len(s)
-}
-
-func (s connChanQueue) IsEmpty() bool {
-	return len(s) == 0
-}
-
-// Offer : offer to queue -> insert the element at the end of the deque
-func (s *connChanQueue) Offer(connChan *ctxConnChan) {
-	*s = append(*s, connChan)
-}
-
-// Pull : pull from queue -> remove and return the first element of the deque
-func (s *connChanQueue) Pull() *ctxConnChan {
-	if s.IsEmpty() {
-		return nil
-	}
-
-	connChan := (*s)[0]
-	*s = (*s)[1:]
-	return connChan
 }
