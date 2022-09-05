@@ -722,7 +722,7 @@ var _ = Describe("dynamic update", func() {
 
 			connPool.SetMaxIdleConns(maxIdleConns - 1)
 
-			Expect(connPool.IdleLen()).To(Equal(maxIdleConns - 1)) // idle conn should not be removed when MaxIdleConns shrinks
+			Expect(connPool.IdleLen()).To(Equal(maxIdleConns - 1)) // idle conn should be removed when MaxIdleConns shrinks
 		})
 
 		It("PoolTimeout changes", func() {
