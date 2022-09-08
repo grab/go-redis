@@ -74,6 +74,7 @@ type ClusterOptions struct {
 	// PoolSize applies per cluster node and not for the whole cluster.
 	PoolSize           int
 	MinIdleConns       int
+	MaxIdleConns       int
 	MaxConnAge         time.Duration
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
@@ -226,6 +227,10 @@ func (n *clusterNode) MarkAsFailing() {
 }
 
 func (n *clusterNode) Failing() bool {
+	if !n.Client.Allow() {
+		return true
+	}
+
 	const timeout = 15 // 15 seconds
 
 	failing := atomic.LoadUint32(&n.failing)
@@ -1068,7 +1073,7 @@ func (c *ClusterClient) reaper(idleCheckFrequency time.Duration) {
 		}
 
 		for _, node := range nodes {
-			_, err := node.Client.connPool.(*pool.ConnPool).ReapStaleConns()
+			_, err := node.Client.connPool.(pool.Reaper).ReapStaleConns()
 			if err != nil {
 				internal.Logger.Printf(c.Context(), "ReapStaleConns failed: %s", err)
 			}

@@ -22,6 +22,9 @@ type Limiter interface {
 	// If operation is allowed client must ReportResult of the operation
 	// whether it is a success or a failure.
 	Allow() error
+	// Execute allow a customised wrapper around the actual execution.
+	// this is useful for most common circuit breaker implementation
+	Execute(func() error) error
 	// ReportResult reports the result of the previously allowed operation.
 	// nil indicates a success, non-nil error usually indicates a failure.
 	ReportResult(result error)
@@ -87,6 +90,9 @@ type Options struct {
 	// Minimum number of idle connections which is useful when establishing
 	// new connection is slow.
 	MinIdleConns int
+	// Maximum number of idle connections
+	// Default is PoolSize. -1 disables idle connections.
+	MaxIdleConns int
 	// Connection age at which client retires (closes) the connection.
 	// Default is to not close aged connections.
 	MaxConnAge time.Duration
@@ -142,6 +148,12 @@ func (opt *Options) init() {
 	}
 	if opt.PoolSize == 0 {
 		opt.PoolSize = 10 * runtime.GOMAXPROCS(0)
+	}
+	switch opt.MaxIdleConns {
+	case -1:
+		opt.MaxIdleConns = 0
+	case 0:
+		opt.MaxIdleConns = opt.PoolSize
 	}
 	switch opt.ReadTimeout {
 	case -1:
