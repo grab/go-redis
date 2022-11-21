@@ -1,4 +1,4 @@
-module github.com/go-redis/redis/v8
+module gitlab.myteksi.net/dbops/Redis/v8
 
 go 1.17
 

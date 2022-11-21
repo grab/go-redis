@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal"
 )
 
 var (

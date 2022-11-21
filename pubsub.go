@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/pool"
-	"github.com/go-redis/redis/v8/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/proto"
 )
 
 // PubSub implements Pub/Sub commands as described in
@@ -422,7 +422,7 @@ func (c *PubSub) getContext() context.Context {
 	return context.Background()
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // Channel returns a Go channel for concurrently receiving messages.
 // The channel is closed together with the PubSub. If the Go channel

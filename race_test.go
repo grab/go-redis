@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/go-redis/redis/v8"
+	"gitlab.myteksi.net/dbops/Redis/v8"
 )
 
 var _ = Describe("races", func() {

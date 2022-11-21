@@ -1,3 +1,11 @@
+## [8.11.5-grab1.0] (https://gitlab.myteksi.net/dbops/Redis/-/tree/v8) (20220-12-21)
+
+### Features
+
+* Add limiter for connections per node
+* Add dynamic poolsize
+* Add dynamic client reload
+
 ## [8.11.5](https://github.com/go-redis/redis/compare/v8.11.4...v8.11.5) (2022-03-17)
 
 

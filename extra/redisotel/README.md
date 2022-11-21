@@ -12,7 +12,7 @@ Tracing is enabled by adding a hook:
 
 ```go
 import (
-    "github.com/go-redis/redis/v8"
+    "gitlab.myteksi.net/dbops/Redis/v8"
     "github.com/go-redis/redis/extra/redisotel"
 )
 

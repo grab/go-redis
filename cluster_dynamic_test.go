@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.myteksi.net/dbops/Redis/v8"
 )
 
 var _ = Describe("Dynamic ClusterClient", func() {

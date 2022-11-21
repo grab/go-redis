@@ -12,11 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/hashtag"
-	"github.com/go-redis/redis/v8/internal/pool"
-	"github.com/go-redis/redis/v8/internal/proto"
-	"github.com/go-redis/redis/v8/internal/rand"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/hashtag"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/rand"
 )
 
 var errClusterNoNodes = fmt.Errorf("redis: cluster has no nodes")
@@ -168,7 +168,7 @@ func (opt *ClusterOptions) clientOptions() *Options {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterNode struct {
 	Client *Client
@@ -257,7 +257,7 @@ func (n *clusterNode) SetGeneration(gen uint32) {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterNodes struct {
 	opt *ClusterOptions
@@ -424,7 +424,7 @@ func (c *clusterNodes) Random() (*clusterNode, error) {
 	return c.GetOrCreate(addrs[n])
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterSlot struct {
 	start, end int
@@ -626,7 +626,7 @@ func (c *clusterState) slotNodes(slot int) []*clusterNode {
 	return nil
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterStateHolder struct {
 	load func(ctx context.Context) (*clusterState, error)
@@ -686,7 +686,7 @@ func (c *clusterStateHolder) ReloadOrGet(ctx context.Context) (*clusterState, er
 	return c.Get(ctx)
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterClient struct {
 	opt           *ClusterOptions
@@ -1735,7 +1735,7 @@ loop:
 	return ss
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type cmdsMap struct {
 	mu sync.Mutex

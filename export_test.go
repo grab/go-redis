@@ -6,9 +6,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/hashtag"
-	"github.com/go-redis/redis/v8/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/hashtag"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/pool"
 )
 
 func (c *baseClient) Pool() pool.Pooler {

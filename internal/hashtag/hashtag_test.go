@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/go-redis/redis/v8/internal/rand"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/rand"
 )
 
 func TestGinkgoSuite(t *testing.T) {

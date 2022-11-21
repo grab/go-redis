@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/go-redis/redis/v8/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/proto"
 )
 
 func BenchmarkReader_ParseReply_Status(b *testing.B) {

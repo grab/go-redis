@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	redis "github.com/go-redis/redis/v8"
+	redis "gitlab.myteksi.net/dbops/Redis/v8"
 )
 
 var _ = Describe("Cmd", func() {

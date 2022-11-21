@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/go-redis/redis/v8/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/pool"
 )
 
 type pipelineExecer func(context.Context, []Cmder) error
