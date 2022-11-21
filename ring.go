@@ -12,17 +12,17 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	rendezvous "github.com/dgryski/go-rendezvous" //nolint
+	rendezvous "github.com/dgryski/go-rendezvous" // nolint
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/hashtag"
-	"github.com/go-redis/redis/v8/internal/pool"
-	"github.com/go-redis/redis/v8/internal/rand"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/hashtag"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/rand"
 )
 
 var errRingShardsDown = errors.New("redis: all ring shards are down")
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type ConsistentHash interface {
 	Get(string) string
@@ -40,7 +40,7 @@ func newRendezvous(shards []string) ConsistentHash {
 	return rendezvousWrapper{rendezvous.New(shards, xxhash.Sum64String)}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // RingOptions are used to configure a ring client and should be
 // passed to NewRing.
@@ -155,7 +155,7 @@ func (opt *RingOptions) clientOptions() *Options {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type ringShard struct {
 	Client *Client
@@ -206,7 +206,7 @@ func (shard *ringShard) Vote(up bool) bool {
 	return shard.IsDown()
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type ringShards struct {
 	opt *RingOptions
@@ -384,7 +384,7 @@ func (c *ringShards) Close() error {
 	return firstErr
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type ring struct {
 	opt           *RingOptions

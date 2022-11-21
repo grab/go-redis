@@ -3,14 +3,13 @@ package redisotel
 import (
 	"context"
 
+	"gitlab.myteksi.net/dbops/Redis/extra/rediscmd/v8"
+	redis "gitlab.myteksi.net/dbops/Redis/v8"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/go-redis/redis/extra/rediscmd/v8"
-	"github.com/go-redis/redis/v8"
 )
 
 const (

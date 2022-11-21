@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"gitlab.myteksi.net/dbops/Redis/v8"
 )
 
 var (

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v8/internal/util"
 )
 
 type writer interface {

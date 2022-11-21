@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/go-redis/redis/v8"
+	"gitlab.myteksi.net/dbops/Redis/v8"
 )
 
 var _ = Describe("Redis Ring", func() {
@@ -542,12 +542,12 @@ var _ = Describe("Ring watch", func() {
 	})
 
 	It("respects max size on multi", func() {
-		//this test checks the number of "pool.conn"
-		//if the health check is performed at the same time
-		//conn will be used, resulting in an abnormal number of "pool.conn".
+		// this test checks the number of "pool.conn"
+		// if the health check is performed at the same time
+		// conn will be used, resulting in an abnormal number of "pool.conn".
 		//
-		//redis.NewRing() does not have an option to prohibit health checks.
-		//set a relatively large time here to avoid health checks.
+		// redis.NewRing() does not have an option to prohibit health checks.
+		// set a relatively large time here to avoid health checks.
 		opt := redisRingOptions()
 		opt.HeartbeatFrequency = 72 * time.Hour
 		ring = redis.NewRing(opt)
