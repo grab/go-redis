@@ -47,7 +47,7 @@ func shouldRetry(err error, retryTimeout bool) bool {
 	if strings.HasPrefix(s, "LOADING ") {
 		return true
 	}
-	if strings.HasPrefix(s, "READONLY ") {
+	if IsReadOnlyError(err) {
 		return true
 	}
 	if strings.HasPrefix(s, "CLUSTERDOWN ") {
@@ -75,7 +75,7 @@ func isBadConn(err error, allowTimeout bool, addr string) bool {
 
 	if isRedisError(err) {
 		switch {
-		case isReadOnlyError(err):
+		case IsReadOnlyError(err):
 			// Close connections in read only state in case domain addr is used
 			// and domain resolves to a different Redis Server. See #790.
 			return true
@@ -125,8 +125,15 @@ func isLoadingError(err error) bool {
 	return strings.HasPrefix(err.Error(), "LOADING ")
 }
 
-func isReadOnlyError(err error) bool {
-	return strings.HasPrefix(err.Error(), "READONLY ")
+func IsReadOnlyError(err error) bool {
+	redisError := err.Error()
+	if strings.HasPrefix(redisError, "READONLY ") {
+		return true
+	}
+
+	// For a Lua script that includes write commands, the read-only error string
+	// contains "-READONLY" rather than beginning with "READONLY "
+	return strings.Contains(redisError, "-READONLY")
 }
 
 func isMovedSameConnAddr(err error, addr string) bool {
