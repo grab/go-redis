@@ -48,7 +48,7 @@ func shouldRetry(err error, retryTimeout bool) bool {
 		return true
 	}
 	if IsReadOnlyError(err) {
-		return true
+		return false
 	}
 	if strings.HasPrefix(s, "CLUSTERDOWN ") {
 		return true
