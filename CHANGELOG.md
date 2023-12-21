@@ -1,3 +1,17 @@
+## [8.11.5-grab1.0]
+
+### Features
+
+* add limiter for connections per node
+* add dynamic poolsize
+* add dynamic client reload
+
+### Bug Fixes
+
+* fix the bug that the client couldn't recognize the readonly error from lua script.
+* fix the bug that the client keep try on the readonly error.
+
+
 ## [8.11.5](https://github.com/go-redis/redis/compare/v8.11.4...v8.11.5) (2022-03-17)
 
 

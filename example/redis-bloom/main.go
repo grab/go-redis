@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/grab/redis/v8"
 )
 
 func main() {

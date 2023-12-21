@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/grab/redis/v8"
 )
 
 type redisHookError struct {
@@ -45,7 +45,7 @@ func TestHookError(t *testing.T) {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 var _ = Describe("Client", func() {
 	var client *redis.Client

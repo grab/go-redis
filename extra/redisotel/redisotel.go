@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/go-redis/redis/extra/rediscmd/v8"
-	"github.com/go-redis/redis/v8"
+	"github.com/grab/redis/v8"
 )
 
 const (

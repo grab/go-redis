@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/pool"
-	"github.com/go-redis/redis/v8/internal/proto"
+	"github.com/grab/redis/v8/internal"
+	"github.com/grab/redis/v8/internal/pool"
+	"github.com/grab/redis/v8/internal/proto"
 )
 
 // Nil reply returned by Redis when key does not exist.
@@ -19,7 +19,7 @@ func SetLogger(logger internal.Logging) {
 	internal.Logger = logger
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type Hook interface {
 	BeforeProcess(ctx context.Context, cmd Cmder) (context.Context, error)
@@ -120,7 +120,7 @@ func (hs hooks) processTxPipeline(
 	return hs.processPipeline(ctx, cmds, fn)
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type baseClient struct {
 	opt      *Options
@@ -535,7 +535,7 @@ func txPipelineReadQueued(rd *proto.Reader, statusCmd *StatusCmd, cmds []Cmder) 
 	return nil
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // Client is a Redis client representing a pool of zero or more
 // underlying connections. It's safe for concurrent use by multiple
@@ -706,7 +706,7 @@ func (c *Client) PSubscribe(ctx context.Context, channels ...string) *PubSub {
 	return pubsub
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type conn struct {
 	baseClient

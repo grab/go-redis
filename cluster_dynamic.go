@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal"
+	"github.com/grab/redis/v8/internal"
 )
 
 // NewDynamicClusterClient is similar to NewClusterClient, but it supports dynamic connection pool management

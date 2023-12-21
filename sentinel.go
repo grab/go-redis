@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/pool"
-	"github.com/go-redis/redis/v8/internal/rand"
+	"github.com/grab/redis/v8/internal"
+	"github.com/grab/redis/v8/internal/pool"
+	"github.com/grab/redis/v8/internal/rand"
 )
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // FailoverOptions are used to configure a failover client and should
 // be passed to NewFailoverClient.
@@ -250,7 +250,7 @@ func masterSlaveDialer(
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // SentinelClient is a client for a Redis Sentinel.
 type SentinelClient struct {
@@ -422,7 +422,7 @@ func (c *SentinelClient) Remove(ctx context.Context, name string) *StringCmd {
 	return cmd
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type sentinelFailover struct {
 	opt *FailoverOptions
@@ -739,7 +739,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // NewFailoverClusterClient returns a client that supports routing read-only commands
 // to a slave node.

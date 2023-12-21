@@ -12,8 +12,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/go-redis/redis/v8"
-	"github.com/go-redis/redis/v8/internal/hashtag"
+	"github.com/grab/redis/v8"
+	"github.com/grab/redis/v8/internal/hashtag"
 )
 
 type clusterScenario struct {
@@ -229,7 +229,7 @@ func slotEqual(s1, s2 redis.ClusterSlot) bool {
 	return true
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 var _ = Describe("ClusterClient", func() {
 	var failover bool

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/go-redis/redis/v8/internal/util"
+	"github.com/grab/redis/v8/internal/util"
 )
 
 // redis resp protocol data type.
@@ -17,7 +17,7 @@ const (
 	ArrayReply  = '*'
 )
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 const Nil = RedisError("redis: nil") // nolint:errname
 
@@ -27,7 +27,7 @@ func (e RedisError) Error() string { return string(e) }
 
 func (RedisError) RedisError() {}
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type MultiBulkParse func(*Reader, int64) (interface{}, error)
 
