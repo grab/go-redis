@@ -12,11 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/hashtag"
-	"github.com/go-redis/redis/v8/internal/pool"
-	"github.com/go-redis/redis/v8/internal/proto"
-	"github.com/go-redis/redis/v8/internal/rand"
+	"github.com/grab/redis/v8/internal"
+	"github.com/grab/redis/v8/internal/hashtag"
+	"github.com/grab/redis/v8/internal/pool"
+	"github.com/grab/redis/v8/internal/proto"
+	"github.com/grab/redis/v8/internal/rand"
 )
 
 var errClusterNoNodes = fmt.Errorf("redis: cluster has no nodes")
@@ -168,7 +168,7 @@ func (opt *ClusterOptions) clientOptions() *Options {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterNode struct {
 	Client *Client
@@ -257,7 +257,7 @@ func (n *clusterNode) SetGeneration(gen uint32) {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterNodes struct {
 	opt *ClusterOptions
@@ -424,7 +424,7 @@ func (c *clusterNodes) Random() (*clusterNode, error) {
 	return c.GetOrCreate(addrs[n])
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterSlot struct {
 	start, end int
@@ -626,7 +626,7 @@ func (c *clusterState) slotNodes(slot int) []*clusterNode {
 	return nil
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterStateHolder struct {
 	load func(ctx context.Context) (*clusterState, error)
@@ -686,7 +686,7 @@ func (c *clusterStateHolder) ReloadOrGet(ctx context.Context) (*clusterState, er
 	return c.Get(ctx)
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterClient struct {
 	opt           *ClusterOptions
@@ -810,7 +810,7 @@ func (c *ClusterClient) process(ctx context.Context, cmd Cmder) error {
 		if lastErr == nil {
 			return nil
 		}
-		if isReadOnly := isReadOnlyError(lastErr); isReadOnly || lastErr == pool.ErrClosed {
+		if isReadOnly := IsReadOnlyError(lastErr); isReadOnly || lastErr == pool.ErrClosed {
 			if isReadOnly {
 				c.state.LazyReload()
 			}
@@ -1491,7 +1491,7 @@ func (c *ClusterClient) Watch(ctx context.Context, fn func(*Tx) error, keys ...s
 			continue
 		}
 
-		if isReadOnly := isReadOnlyError(err); isReadOnly || err == pool.ErrClosed {
+		if isReadOnly := IsReadOnlyError(err); isReadOnly || err == pool.ErrClosed {
 			if isReadOnly {
 				c.state.LazyReload()
 			}
@@ -1735,7 +1735,7 @@ loop:
 	return ss
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type cmdsMap struct {
 	mu sync.Mutex
