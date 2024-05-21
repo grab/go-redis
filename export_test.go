@@ -6,9 +6,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-redis/redis/v8/internal"
-	"github.com/go-redis/redis/v8/internal/hashtag"
-	"github.com/go-redis/redis/v8/internal/pool"
+	"github.com/redis/go-redis/v9/internal"
+	"github.com/redis/go-redis/v9/internal/hashtag"
+	"github.com/redis/go-redis/v9/internal/pool"
 )
 
 func (c *baseClient) Pool() pool.Pooler {
@@ -85,11 +85,20 @@ func (c *clusterState) IsConsistent(ctx context.Context) bool {
 }
 
 func GetSlavesAddrByName(ctx context.Context, c *SentinelClient, name string) []string {
-	addrs, err := c.Slaves(ctx, name).Result()
+	addrs, err := c.Replicas(ctx, name).Result()
 	if err != nil {
-		internal.Logger.Printf(ctx, "sentinel: Slaves name=%q failed: %s",
+		internal.Logger.Printf(ctx, "sentinel: Replicas name=%q failed: %s",
 			name, err)
 		return []string{}
 	}
-	return parseSlaveAddrs(addrs, false)
+	return parseReplicaAddrs(addrs, false)
+}
+
+func (c *Ring) ShardByName(name string) *ringShard {
+	shard, _ := c.sharding.GetByName(name)
+	return shard
+}
+
+func (c *ModuleLoadexConfig) ToArgs() []interface{} {
+	return c.toArgs()
 }

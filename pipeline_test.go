@@ -1,12 +1,13 @@
 package redis_test
 
 import (
+	"errors"
 	"strconv"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/bsm/ginkgo/v2"
+	. "github.com/bsm/gomega"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 var _ = Describe("pipelining", func() {
@@ -83,6 +84,11 @@ var _ = Describe("pipelining", func() {
 					Expect(cmd).To(BeAssignableToTypeOf(&redis.BoolCmd{}))
 				}
 			}
+		})
+
+		It("should Exec, not Do", func() {
+			err := pipe.Do(ctx).Err()
+			Expect(err).To(Equal(errors.New("redis: please enter the command to be executed")))
 		})
 	}
 

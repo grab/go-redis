@@ -2,7 +2,6 @@ package redis_test
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net"
 	"strconv"
@@ -10,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/bsm/ginkgo/v2"
+	. "github.com/bsm/gomega"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 var _ = Describe("races", func() {
@@ -215,53 +214,6 @@ var _ = Describe("races", func() {
 		Expect(val).To(Equal(int64(C * N)))
 	})
 
-	It("should Pipeline", func() {
-		perform(C, func(id int) {
-			pipe := client.Pipeline()
-			for i := 0; i < N; i++ {
-				pipe.Echo(ctx, fmt.Sprint(i))
-			}
-
-			cmds, err := pipe.Exec(ctx)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cmds).To(HaveLen(N))
-
-			for i := 0; i < N; i++ {
-				Expect(cmds[i].(*redis.StringCmd).Val()).To(Equal(fmt.Sprint(i)))
-			}
-		})
-	})
-
-	It("should Pipeline", func() {
-		pipe := client.Pipeline()
-		perform(N, func(id int) {
-			pipe.Incr(ctx, "key")
-		})
-
-		cmds, err := pipe.Exec(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(cmds).To(HaveLen(N))
-
-		n, err := client.Get(ctx, "key").Int64()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(n).To(Equal(int64(N)))
-	})
-
-	It("should TxPipeline", func() {
-		pipe := client.TxPipeline()
-		perform(N, func(id int) {
-			pipe.Incr(ctx, "key")
-		})
-
-		cmds, err := pipe.Exec(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(cmds).To(HaveLen(N))
-
-		n, err := client.Get(ctx, "key").Int64()
-		Expect(err).NotTo(HaveOccurred())
-		Expect(n).To(Equal(int64(N)))
-	})
-
 	PIt("should BLPop", func() {
 		var received uint32
 
@@ -288,33 +240,6 @@ var _ = Describe("races", func() {
 
 		wg.Wait()
 		Expect(atomic.LoadUint32(&received)).To(Equal(uint32(C * N)))
-	})
-
-	It("should WithContext", func() {
-		perform(C, func(_ int) {
-			err := client.WithContext(ctx).Ping(ctx).Err()
-			Expect(err).NotTo(HaveOccurred())
-		})
-	})
-
-	It("should abort on context timeout", func() {
-		opt := redisClusterOptions()
-		client := cluster.newClusterClient(ctx, opt)
-
-		ctx, cancel := context.WithCancel(context.Background())
-
-		wg := performAsync(C, func(_ int) {
-			_, err := client.XRead(ctx, &redis.XReadArgs{
-				Streams: []string{"test", "$"},
-				Block:   1 * time.Second,
-			}).Result()
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Or(Equal(context.Canceled.Error()), ContainSubstring("operation was canceled")))
-		})
-
-		time.Sleep(10 * time.Millisecond)
-		cancel()
-		wg.Wait()
 	})
 })
 

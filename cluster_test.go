@@ -2,6 +2,8 @@ package redis_test
 
 import (
 	"context"
+	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -9,11 +11,10 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"github.com/go-redis/redis/v8"
-	"github.com/go-redis/redis/v8/internal/hashtag"
+	. "github.com/bsm/ginkgo/v2"
+	. "github.com/bsm/gomega"
+	"github.com/redis/go-redis/v9"
+	"github.com/redis/go-redis/v9/internal/hashtag"
 )
 
 type clusterScenario struct {
@@ -82,8 +83,10 @@ func (s *clusterScenario) newClusterClient(
 
 func (s *clusterScenario) Close() error {
 	for _, port := range s.ports {
-		processes[port].Close()
-		delete(processes, port)
+		if process, ok := processes[port]; ok {
+			process.Close()
+			delete(processes, port)
+		}
 	}
 	return nil
 }
@@ -237,14 +240,6 @@ var _ = Describe("ClusterClient", func() {
 	var client *redis.ClusterClient
 
 	assertClusterClient := func() {
-		It("supports WithContext", func() {
-			ctx, cancel := context.WithCancel(ctx)
-			cancel()
-
-			err := client.Ping(ctx).Err()
-			Expect(err).To(MatchError("context canceled"))
-		})
-
 		It("should GET/SET/DEL", func() {
 			err := client.Get(ctx, "A").Err()
 			Expect(err).To(Equal(redis.Nil))
@@ -555,6 +550,30 @@ var _ = Describe("ClusterClient", func() {
 			}, 30*time.Second).ShouldNot(HaveOccurred())
 		})
 
+		It("supports sharded PubSub", func() {
+			pubsub := client.SSubscribe(ctx, "mychannel")
+			defer pubsub.Close()
+
+			Eventually(func() error {
+				_, err := client.SPublish(ctx, "mychannel", "hello").Result()
+				if err != nil {
+					return err
+				}
+
+				msg, err := pubsub.ReceiveTimeout(ctx, time.Second)
+				if err != nil {
+					return err
+				}
+
+				_, ok := msg.(*redis.Message)
+				if !ok {
+					return fmt.Errorf("got %T, wanted *redis.Message", msg)
+				}
+
+				return nil
+			}, 30*time.Second).ShouldNot(HaveOccurred())
+		})
+
 		It("supports PubSub.Ping without channels", func() {
 			pubsub := client.Subscribe(ctx)
 			defer pubsub.Close()
@@ -564,9 +583,39 @@ var _ = Describe("ClusterClient", func() {
 		})
 	}
 
+	Describe("ClusterClient PROTO 2", func() {
+		BeforeEach(func() {
+			opt = redisClusterOptions()
+			opt.Protocol = 2
+			client = cluster.newClusterClient(ctx, opt)
+
+			err := client.ForEachMaster(ctx, func(ctx context.Context, master *redis.Client) error {
+				return master.FlushDB(ctx).Err()
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			_ = client.ForEachMaster(ctx, func(ctx context.Context, master *redis.Client) error {
+				return master.FlushDB(ctx).Err()
+			})
+			Expect(client.Close()).NotTo(HaveOccurred())
+		})
+
+		It("should CLUSTER PROTO 2", func() {
+			_ = client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+				val, err := c.Do(ctx, "HELLO").Result()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(val).Should(ContainElements("proto", int64(2)))
+				return nil
+			})
+		})
+	})
+
 	Describe("ClusterClient", func() {
 		BeforeEach(func() {
 			opt = redisClusterOptions()
+			opt.ClientName = "cluster_hi"
 			client = cluster.newClusterClient(ctx, opt)
 
 			err := client.ForEachMaster(ctx, func(ctx context.Context, master *redis.Client) error {
@@ -657,6 +706,90 @@ var _ = Describe("ClusterClient", func() {
 			Expect(assertSlotsEqual(res, wanted)).NotTo(HaveOccurred())
 		})
 
+		It("should CLUSTER SHARDS", func() {
+			res, err := client.ClusterShards(ctx).Result()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(res).NotTo(BeEmpty())
+
+			// Iterate over the ClusterShard results and validate the fields.
+			for _, shard := range res {
+				Expect(shard.Slots).NotTo(BeEmpty())
+				for _, slotRange := range shard.Slots {
+					Expect(slotRange.Start).To(BeNumerically(">=", 0))
+					Expect(slotRange.End).To(BeNumerically(">=", slotRange.Start))
+				}
+
+				Expect(shard.Nodes).NotTo(BeEmpty())
+				for _, node := range shard.Nodes {
+					Expect(node.ID).NotTo(BeEmpty())
+					Expect(node.Endpoint).NotTo(BeEmpty())
+					Expect(node.IP).NotTo(BeEmpty())
+					Expect(node.Port).To(BeNumerically(">", 0))
+
+					validRoles := []string{"master", "slave", "replica"}
+					Expect(validRoles).To(ContainElement(node.Role))
+
+					Expect(node.ReplicationOffset).To(BeNumerically(">=", 0))
+
+					validHealthStatuses := []string{"online", "failed", "loading"}
+					Expect(validHealthStatuses).To(ContainElement(node.Health))
+				}
+			}
+		})
+
+		It("should CLUSTER LINKS", func() {
+			res, err := client.ClusterLinks(ctx).Result()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(res).NotTo(BeEmpty())
+
+			// Iterate over the ClusterLink results and validate the map keys.
+			for _, link := range res {
+
+				Expect(link.Direction).NotTo(BeEmpty())
+				Expect([]string{"from", "to"}).To(ContainElement(link.Direction))
+				Expect(link.Node).NotTo(BeEmpty())
+				Expect(link.CreateTime).To(BeNumerically(">", 0))
+
+				Expect(link.Events).NotTo(BeEmpty())
+				validEventChars := []rune{'r', 'w'}
+				for _, eventChar := range link.Events {
+					Expect(validEventChars).To(ContainElement(eventChar))
+				}
+
+				Expect(link.SendBufferAllocated).To(BeNumerically(">=", 0))
+				Expect(link.SendBufferUsed).To(BeNumerically(">=", 0))
+			}
+		})
+
+		It("should cluster client setname", func() {
+			err := client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+				return c.Ping(ctx).Err()
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			_ = client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+				val, err := c.ClientList(ctx).Result()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(val).Should(ContainSubstring("name=cluster_hi"))
+				return nil
+			})
+		})
+
+		It("should CLUSTER PROTO 3", func() {
+			_ = client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+				val, err := c.Do(ctx, "HELLO").Result()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(val).Should(HaveKeyWithValue("proto", int64(3)))
+				return nil
+			})
+		})
+
+		It("should CLUSTER MYSHARDID", func() {
+			shardID, err := client.ClusterMyShardID(ctx).Result()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shardID).ToNot(BeEmpty())
+		})
+
 		It("should CLUSTER NODES", func() {
 			res, err := client.ClusterNodes(ctx).Result()
 			Expect(err).NotTo(HaveOccurred())
@@ -733,6 +866,9 @@ var _ = Describe("ClusterClient", func() {
 		})
 
 		It("supports Process hook", func() {
+			testCtx, cancel := context.WithCancel(ctx)
+			defer cancel()
+
 			err := client.Ping(ctx).Err()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -744,29 +880,47 @@ var _ = Describe("ClusterClient", func() {
 			var stack []string
 
 			clusterHook := &hook{
-				beforeProcess: func(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
-					Expect(cmd.String()).To(Equal("ping: "))
-					stack = append(stack, "cluster.BeforeProcess")
-					return ctx, nil
-				},
-				afterProcess: func(ctx context.Context, cmd redis.Cmder) error {
-					Expect(cmd.String()).To(Equal("ping: PONG"))
-					stack = append(stack, "cluster.AfterProcess")
-					return nil
+				processHook: func(hook redis.ProcessHook) redis.ProcessHook {
+					return func(ctx context.Context, cmd redis.Cmder) error {
+						select {
+						case <-testCtx.Done():
+							return hook(ctx, cmd)
+						default:
+						}
+
+						Expect(cmd.String()).To(Equal("ping: "))
+						stack = append(stack, "cluster.BeforeProcess")
+
+						err := hook(ctx, cmd)
+
+						Expect(cmd.String()).To(Equal("ping: PONG"))
+						stack = append(stack, "cluster.AfterProcess")
+
+						return err
+					}
 				},
 			}
 			client.AddHook(clusterHook)
 
 			nodeHook := &hook{
-				beforeProcess: func(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
-					Expect(cmd.String()).To(Equal("ping: "))
-					stack = append(stack, "shard.BeforeProcess")
-					return ctx, nil
-				},
-				afterProcess: func(ctx context.Context, cmd redis.Cmder) error {
-					Expect(cmd.String()).To(Equal("ping: PONG"))
-					stack = append(stack, "shard.AfterProcess")
-					return nil
+				processHook: func(hook redis.ProcessHook) redis.ProcessHook {
+					return func(ctx context.Context, cmd redis.Cmder) error {
+						select {
+						case <-testCtx.Done():
+							return hook(ctx, cmd)
+						default:
+						}
+
+						Expect(cmd.String()).To(Equal("ping: "))
+						stack = append(stack, "shard.BeforeProcess")
+
+						err := hook(ctx, cmd)
+
+						Expect(cmd.String()).To(Equal("ping: PONG"))
+						stack = append(stack, "shard.AfterProcess")
+
+						return err
+					}
 				},
 			}
 
@@ -783,11 +937,6 @@ var _ = Describe("ClusterClient", func() {
 				"shard.AfterProcess",
 				"cluster.AfterProcess",
 			}))
-
-			clusterHook.beforeProcess = nil
-			clusterHook.afterProcess = nil
-			nodeHook.beforeProcess = nil
-			nodeHook.afterProcess = nil
 		})
 
 		It("supports Pipeline hook", func() {
@@ -802,33 +951,39 @@ var _ = Describe("ClusterClient", func() {
 			var stack []string
 
 			client.AddHook(&hook{
-				beforeProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
-					Expect(cmds).To(HaveLen(1))
-					Expect(cmds[0].String()).To(Equal("ping: "))
-					stack = append(stack, "cluster.BeforeProcessPipeline")
-					return ctx, nil
-				},
-				afterProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) error {
-					Expect(cmds).To(HaveLen(1))
-					Expect(cmds[0].String()).To(Equal("ping: PONG"))
-					stack = append(stack, "cluster.AfterProcessPipeline")
-					return nil
+				processPipelineHook: func(hook redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+					return func(ctx context.Context, cmds []redis.Cmder) error {
+						Expect(cmds).To(HaveLen(1))
+						Expect(cmds[0].String()).To(Equal("ping: "))
+						stack = append(stack, "cluster.BeforeProcessPipeline")
+
+						err := hook(ctx, cmds)
+
+						Expect(cmds).To(HaveLen(1))
+						Expect(cmds[0].String()).To(Equal("ping: PONG"))
+						stack = append(stack, "cluster.AfterProcessPipeline")
+
+						return err
+					}
 				},
 			})
 
 			_ = client.ForEachShard(ctx, func(ctx context.Context, node *redis.Client) error {
 				node.AddHook(&hook{
-					beforeProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
-						Expect(cmds).To(HaveLen(1))
-						Expect(cmds[0].String()).To(Equal("ping: "))
-						stack = append(stack, "shard.BeforeProcessPipeline")
-						return ctx, nil
-					},
-					afterProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) error {
-						Expect(cmds).To(HaveLen(1))
-						Expect(cmds[0].String()).To(Equal("ping: PONG"))
-						stack = append(stack, "shard.AfterProcessPipeline")
-						return nil
+					processPipelineHook: func(hook redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+						return func(ctx context.Context, cmds []redis.Cmder) error {
+							Expect(cmds).To(HaveLen(1))
+							Expect(cmds[0].String()).To(Equal("ping: "))
+							stack = append(stack, "shard.BeforeProcessPipeline")
+
+							err := hook(ctx, cmds)
+
+							Expect(cmds).To(HaveLen(1))
+							Expect(cmds[0].String()).To(Equal("ping: PONG"))
+							stack = append(stack, "shard.AfterProcessPipeline")
+
+							return err
+						}
 					},
 				})
 				return nil
@@ -859,33 +1014,39 @@ var _ = Describe("ClusterClient", func() {
 			var stack []string
 
 			client.AddHook(&hook{
-				beforeProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
-					Expect(cmds).To(HaveLen(3))
-					Expect(cmds[1].String()).To(Equal("ping: "))
-					stack = append(stack, "cluster.BeforeProcessPipeline")
-					return ctx, nil
-				},
-				afterProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) error {
-					Expect(cmds).To(HaveLen(3))
-					Expect(cmds[1].String()).To(Equal("ping: PONG"))
-					stack = append(stack, "cluster.AfterProcessPipeline")
-					return nil
+				processPipelineHook: func(hook redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+					return func(ctx context.Context, cmds []redis.Cmder) error {
+						Expect(cmds).To(HaveLen(3))
+						Expect(cmds[1].String()).To(Equal("ping: "))
+						stack = append(stack, "cluster.BeforeProcessPipeline")
+
+						err := hook(ctx, cmds)
+
+						Expect(cmds).To(HaveLen(3))
+						Expect(cmds[1].String()).To(Equal("ping: PONG"))
+						stack = append(stack, "cluster.AfterProcessPipeline")
+
+						return err
+					}
 				},
 			})
 
 			_ = client.ForEachShard(ctx, func(ctx context.Context, node *redis.Client) error {
 				node.AddHook(&hook{
-					beforeProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
-						Expect(cmds).To(HaveLen(3))
-						Expect(cmds[1].String()).To(Equal("ping: "))
-						stack = append(stack, "shard.BeforeProcessPipeline")
-						return ctx, nil
-					},
-					afterProcessPipeline: func(ctx context.Context, cmds []redis.Cmder) error {
-						Expect(cmds).To(HaveLen(3))
-						Expect(cmds[1].String()).To(Equal("ping: PONG"))
-						stack = append(stack, "shard.AfterProcessPipeline")
-						return nil
+					processPipelineHook: func(hook redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+						return func(ctx context.Context, cmds []redis.Cmder) error {
+							Expect(cmds).To(HaveLen(3))
+							Expect(cmds[1].String()).To(Equal("ping: "))
+							stack = append(stack, "shard.BeforeProcessPipeline")
+
+							err := hook(ctx, cmds)
+
+							Expect(cmds).To(HaveLen(3))
+							Expect(cmds[1].String()).To(Equal("ping: PONG"))
+							stack = append(stack, "shard.AfterProcessPipeline")
+
+							return err
+						}
 					},
 				})
 				return nil
@@ -1254,27 +1415,175 @@ var _ = Describe("ClusterClient timeout", func() {
 	Context("read/write timeout", func() {
 		BeforeEach(func() {
 			opt := redisClusterOptions()
-			opt.ReadTimeout = 250 * time.Millisecond
-			opt.WriteTimeout = 250 * time.Millisecond
-			opt.MaxRedirects = 1
 			client = cluster.newClusterClient(ctx, opt)
 
 			err := client.ForEachShard(ctx, func(ctx context.Context, client *redis.Client) error {
-				return client.ClientPause(ctx, pause).Err()
+				err := client.ClientPause(ctx, pause).Err()
+
+				opt := client.Options()
+				opt.ReadTimeout = time.Nanosecond
+				opt.WriteTimeout = time.Nanosecond
+
+				return err
 			})
 			Expect(err).NotTo(HaveOccurred())
+
+			// Overwrite timeouts after the client is initialized.
+			opt.ReadTimeout = time.Nanosecond
+			opt.WriteTimeout = time.Nanosecond
+			opt.MaxRedirects = 0
 		})
 
 		AfterEach(func() {
 			_ = client.ForEachShard(ctx, func(ctx context.Context, client *redis.Client) error {
 				defer GinkgoRecover()
+
+				opt := client.Options()
+				opt.ReadTimeout = time.Second
+				opt.WriteTimeout = time.Second
+
 				Eventually(func() error {
 					return client.Ping(ctx).Err()
 				}, 2*pause).ShouldNot(HaveOccurred())
 				return nil
 			})
+
+			err := client.Close()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		testTimeout()
+	})
+})
+
+var _ = Describe("ClusterClient ParseURL", func() {
+	var cases = []struct {
+		test string
+		url  string
+		o    *redis.ClusterOptions // expected value
+		err  error
+	}{
+		{
+			test: "ParseRedisURL",
+			url:  "redis://localhost:123",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}},
+		}, {
+			test: "ParseRedissURL",
+			url:  "rediss://localhost:123",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, TLSConfig: &tls.Config{ServerName: "localhost"}},
+		}, {
+			test: "MissingRedisPort",
+			url:  "redis://localhost",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:6379"}},
+		}, {
+			test: "MissingRedissPort",
+			url:  "rediss://localhost",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:6379"}, TLSConfig: &tls.Config{ServerName: "localhost"}},
+		}, {
+			test: "MultipleRedisURLs",
+			url:  "redis://localhost:123?addr=localhost:1234&addr=localhost:12345",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123", "localhost:1234", "localhost:12345"}},
+		}, {
+			test: "MultipleRedissURLs",
+			url:  "rediss://localhost:123?addr=localhost:1234&addr=localhost:12345",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123", "localhost:1234", "localhost:12345"}, TLSConfig: &tls.Config{ServerName: "localhost"}},
+		}, {
+			test: "OnlyPassword",
+			url:  "redis://:bar@localhost:123",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, Password: "bar"},
+		}, {
+			test: "OnlyUser",
+			url:  "redis://foo@localhost:123",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, Username: "foo"},
+		}, {
+			test: "RedisUsernamePassword",
+			url:  "redis://foo:bar@localhost:123",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, Username: "foo", Password: "bar"},
+		}, {
+			test: "RedissUsernamePassword",
+			url:  "rediss://foo:bar@localhost:123?addr=localhost:1234",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123", "localhost:1234"}, Username: "foo", Password: "bar", TLSConfig: &tls.Config{ServerName: "localhost"}},
+		}, {
+			test: "QueryParameters",
+			url:  "redis://localhost:123?read_timeout=2&pool_fifo=true&addr=localhost:1234",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123", "localhost:1234"}, ReadTimeout: 2 * time.Second, PoolFIFO: true},
+		}, {
+			test: "DisabledTimeout",
+			url:  "redis://localhost:123?conn_max_idle_time=0",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, ConnMaxIdleTime: -1},
+		}, {
+			test: "DisabledTimeoutNeg",
+			url:  "redis://localhost:123?conn_max_idle_time=-1",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, ConnMaxIdleTime: -1},
+		}, {
+			test: "UseDefault",
+			url:  "redis://localhost:123?conn_max_idle_time=",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, ConnMaxIdleTime: 0},
+		}, {
+			test: "Protocol",
+			url:  "redis://localhost:123?protocol=2",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, Protocol: 2},
+		}, {
+			test: "ClientName",
+			url:  "redis://localhost:123?client_name=cluster_hi",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, ClientName: "cluster_hi"},
+		}, {
+			test: "UseDefaultMissing=",
+			url:  "redis://localhost:123?conn_max_idle_time",
+			o:    &redis.ClusterOptions{Addrs: []string{"localhost:123"}, ConnMaxIdleTime: 0},
+		}, {
+			test: "InvalidQueryAddr",
+			url:  "rediss://foo:bar@localhost:123?addr=rediss://foo:barr@localhost:1234",
+			err:  errors.New(`redis: unable to parse addr param: rediss://foo:barr@localhost:1234`),
+		}, {
+			test: "InvalidInt",
+			url:  "redis://localhost?pool_size=five",
+			err:  errors.New(`redis: invalid pool_size number: strconv.Atoi: parsing "five": invalid syntax`),
+		}, {
+			test: "InvalidBool",
+			url:  "redis://localhost?pool_fifo=yes",
+			err:  errors.New(`redis: invalid pool_fifo boolean: expected true/false/1/0 or an empty string, got "yes"`),
+		}, {
+			test: "UnknownParam",
+			url:  "redis://localhost?abc=123",
+			err:  errors.New("redis: unexpected option: abc"),
+		}, {
+			test: "InvalidScheme",
+			url:  "https://google.com",
+			err:  errors.New("redis: invalid URL scheme: https"),
+		},
+	}
+
+	It("match ParseClusterURL", func() {
+		for i := range cases {
+			tc := cases[i]
+			actual, err := redis.ParseClusterURL(tc.url)
+			if tc.err != nil {
+				Expect(err).Should(MatchError(tc.err))
+			} else {
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			if err == nil {
+				Expect(tc.o).NotTo(BeNil())
+
+				Expect(tc.o.Addrs).To(Equal(actual.Addrs))
+				Expect(tc.o.TLSConfig).To(Equal(actual.TLSConfig))
+				Expect(tc.o.Username).To(Equal(actual.Username))
+				Expect(tc.o.Password).To(Equal(actual.Password))
+				Expect(tc.o.MaxRetries).To(Equal(actual.MaxRetries))
+				Expect(tc.o.MinRetryBackoff).To(Equal(actual.MinRetryBackoff))
+				Expect(tc.o.MaxRetryBackoff).To(Equal(actual.MaxRetryBackoff))
+				Expect(tc.o.DialTimeout).To(Equal(actual.DialTimeout))
+				Expect(tc.o.ReadTimeout).To(Equal(actual.ReadTimeout))
+				Expect(tc.o.WriteTimeout).To(Equal(actual.WriteTimeout))
+				Expect(tc.o.PoolFIFO).To(Equal(actual.PoolFIFO))
+				Expect(tc.o.PoolSize).To(Equal(actual.PoolSize))
+				Expect(tc.o.MinIdleConns).To(Equal(actual.MinIdleConns))
+				Expect(tc.o.ConnMaxLifetime).To(Equal(actual.ConnMaxLifetime))
+				Expect(tc.o.ConnMaxIdleTime).To(Equal(actual.ConnMaxIdleTime))
+				Expect(tc.o.PoolTimeout).To(Equal(actual.PoolTimeout))
+			}
+		}
 	})
 })

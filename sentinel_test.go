@@ -1,13 +1,38 @@
 package redis_test
 
 import (
+	"context"
 	"net"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/bsm/ginkgo/v2"
+	. "github.com/bsm/gomega"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
+
+var _ = Describe("Sentinel PROTO 2", func() {
+	var client *redis.Client
+
+	BeforeEach(func() {
+		client = redis.NewFailoverClient(&redis.FailoverOptions{
+			MasterName:    sentinelName,
+			SentinelAddrs: sentinelAddrs,
+			MaxRetries:    -1,
+			Protocol:      2,
+		})
+		Expect(client.FlushDB(ctx).Err()).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		_ = client.Close()
+	})
+
+	It("should sentinel client PROTO 2", func() {
+		val, err := client.Do(ctx, "HELLO").Result()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(val).Should(ContainElements("proto", int64(2)))
+	})
+})
 
 var _ = Describe("Sentinel", func() {
 	var client *redis.Client
@@ -17,6 +42,7 @@ var _ = Describe("Sentinel", func() {
 
 	BeforeEach(func() {
 		client = redis.NewFailoverClient(&redis.FailoverOptions{
+			ClientName:    "sentinel_hi",
 			MasterName:    sentinelName,
 			SentinelAddrs: sentinelAddrs,
 			MaxRetries:    -1,
@@ -125,6 +151,47 @@ var _ = Describe("Sentinel", func() {
 		err := client.Ping(ctx).Err()
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	It("should sentinel client setname", func() {
+		Expect(client.Ping(ctx).Err()).NotTo(HaveOccurred())
+		val, err := client.ClientList(ctx).Result()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(val).Should(ContainSubstring("name=sentinel_hi"))
+	})
+
+	It("should sentinel client PROTO 3", func() {
+		val, err := client.Do(ctx, "HELLO").Result()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(val).Should(HaveKeyWithValue("proto", int64(3)))
+	})
+})
+
+var _ = Describe("NewFailoverClusterClient PROTO 2", func() {
+	var client *redis.ClusterClient
+
+	BeforeEach(func() {
+		client = redis.NewFailoverClusterClient(&redis.FailoverOptions{
+			MasterName:    sentinelName,
+			SentinelAddrs: sentinelAddrs,
+			Protocol:      2,
+
+			RouteRandomly: true,
+		})
+		Expect(client.FlushDB(ctx).Err()).NotTo(HaveOccurred())
+	})
+
+	AfterEach(func() {
+		_ = client.Close()
+	})
+
+	It("should sentinel cluster PROTO 2", func() {
+		_ = client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+			val, err := client.Do(ctx, "HELLO").Result()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(val).Should(ContainElements("proto", int64(2)))
+			return nil
+		})
+	})
 })
 
 var _ = Describe("NewFailoverClusterClient", func() {
@@ -134,6 +201,7 @@ var _ = Describe("NewFailoverClusterClient", func() {
 
 	BeforeEach(func() {
 		client = redis.NewFailoverClusterClient(&redis.FailoverOptions{
+			ClientName:    "sentinel_cluster_hi",
 			MasterName:    sentinelName,
 			SentinelAddrs: sentinelAddrs,
 
@@ -213,6 +281,29 @@ var _ = Describe("NewFailoverClusterClient", func() {
 		_, err = startRedis(masterPort)
 		Expect(err).NotTo(HaveOccurred())
 	})
+
+	It("should sentinel cluster client setname", func() {
+		err := client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+			return c.Ping(ctx).Err()
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		_ = client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+			val, err := c.ClientList(ctx).Result()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(val).Should(ContainSubstring("name=sentinel_cluster_hi"))
+			return nil
+		})
+	})
+
+	It("should sentinel cluster PROTO 3", func() {
+		_ = client.ForEachShard(ctx, func(ctx context.Context, c *redis.Client) error {
+			val, err := client.Do(ctx, "HELLO").Result()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(val).Should(HaveKeyWithValue("proto", int64(3)))
+			return nil
+		})
+	})
 })
 
 var _ = Describe("SentinelAclAuth", func() {
@@ -223,7 +314,7 @@ var _ = Describe("SentinelAclAuth", func() {
 
 	var client *redis.Client
 	var sentinel *redis.SentinelClient
-	var sentinels = func() []*redisProcess {
+	sentinels := func() []*redisProcess {
 		return []*redisProcess{sentinel1, sentinel2, sentinel3}
 	}
 

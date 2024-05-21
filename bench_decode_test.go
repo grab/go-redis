@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal/proto"
+	"github.com/redis/go-redis/v9/internal/proto"
 )
 
 var ctx = context.TODO()
@@ -41,7 +41,7 @@ func NewClusterClientStub(resp []byte) *ClientStub {
 
 	client := NewClusterClient(&ClusterOptions{
 		PoolSize: 128,
-		Addrs:    []string{"127.0.0.1:6379"},
+		Addrs:    []string{":6379"},
 		Dialer: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return stub.stubConn(initHello), nil
 		},
@@ -118,7 +118,7 @@ func BenchmarkDecode(b *testing.B) {
 	}
 
 	benchmarks := []Benchmark{
-		{"single", NewClientStub},
+		{"server", NewClientStub},
 		{"cluster", NewClusterClientStub},
 	}
 

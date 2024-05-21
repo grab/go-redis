@@ -4,10 +4,11 @@ import (
 	"encoding"
 	"fmt"
 	"io"
+	"net"
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8/internal/util"
+	"github.com/redis/go-redis/v9/internal/util"
 )
 
 type writer interface {
@@ -106,6 +107,8 @@ func (w *Writer) WriteArg(v interface{}) error {
 			return err
 		}
 		return w.bytes(b)
+	case net.IP:
+		return w.bytes(v)
 	default:
 		return fmt.Errorf(
 			"redis: can't marshal %T (implement encoding.BinaryMarshaler)", v)

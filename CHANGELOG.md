@@ -1,184 +1,124 @@
-## [8.11.5](https://github.com/go-redis/redis/compare/v8.11.4...v8.11.5) (2022-03-17)
+## [9.0.5](https://github.com/redis/go-redis/compare/v9.0.4...v9.0.5) (2023-05-29)
+
+
+### Features
+
+* Add ACL LOG ([#2536](https://github.com/redis/go-redis/issues/2536)) ([31ba855](https://github.com/redis/go-redis/commit/31ba855ddebc38fbcc69a75d9d4fb769417cf602))
+* add field protocol to setupClusterQueryParams ([#2600](https://github.com/redis/go-redis/issues/2600)) ([840c25c](https://github.com/redis/go-redis/commit/840c25cb6f320501886a82a5e75f47b491e46fbe))
+* add protocol option ([#2598](https://github.com/redis/go-redis/issues/2598)) ([3917988](https://github.com/redis/go-redis/commit/391798880cfb915c4660f6c3ba63e0c1a459e2af))
+
+
+
+## [9.0.4](https://github.com/redis/go-redis/compare/v9.0.3...v9.0.4) (2023-05-01)
 
 
 ### Bug Fixes
 
-* add missing Expire methods to Cmdable ([17e3b43](https://github.com/go-redis/redis/commit/17e3b43879d516437ada71cf9c0deac6a382ed9a))
-* add whitespace for avoid unlikely colisions ([7f7c181](https://github.com/go-redis/redis/commit/7f7c1817617cfec909efb13d14ad22ef05a6ad4c))
-* example/otel compile error ([#2028](https://github.com/go-redis/redis/issues/2028)) ([187c07c](https://github.com/go-redis/redis/commit/187c07c41bf68dc3ab280bc3a925e960bbef6475))
-* **extra/redisotel:** set span.kind attribute to client ([065b200](https://github.com/go-redis/redis/commit/065b200070b41e6e949710b4f9e01b50ccc60ab2))
-* format ([96f53a0](https://github.com/go-redis/redis/commit/96f53a0159a28affa94beec1543a62234e7f8b32))
-* invalid type assert in stringArg ([de6c131](https://github.com/go-redis/redis/commit/de6c131865b8263400c8491777b295035f2408e4))
-* rename Golang to Go ([#2030](https://github.com/go-redis/redis/issues/2030)) ([b82a2d9](https://github.com/go-redis/redis/commit/b82a2d9d4d2de7b7cbe8fcd4895be62dbcacacbc))
-* set timeout for WAIT command. Fixes [#1963](https://github.com/go-redis/redis/issues/1963) ([333fee1](https://github.com/go-redis/redis/commit/333fee1a8fd98a2fbff1ab187c1b03246a7eb01f))
-* update some argument counts in pre-allocs ([f6974eb](https://github.com/go-redis/redis/commit/f6974ebb5c40a8adf90d2cacab6dc297f4eba4c2))
+* reader float parser ([#2513](https://github.com/redis/go-redis/issues/2513)) ([46f2450](https://github.com/redis/go-redis/commit/46f245075e6e3a8bd8471f9ca67ea95fd675e241))
 
 
 ### Features
 
-* Add redis v7's NX, XX, GT, LT expire variants ([e19bbb2](https://github.com/go-redis/redis/commit/e19bbb26e2e395c6e077b48d80d79e99f729a8b8))
-* add support for acl sentinel auth in universal client ([ab0ccc4](https://github.com/go-redis/redis/commit/ab0ccc47413f9b2a6eabc852fed5005a3ee1af6e))
-* add support for COPY command ([#2016](https://github.com/go-redis/redis/issues/2016)) ([730afbc](https://github.com/go-redis/redis/commit/730afbcffb93760e8a36cc06cfe55ab102b693a7))
-* add support for passing extra attributes added to spans ([39faaa1](https://github.com/go-redis/redis/commit/39faaa171523834ba527c9789710c4fde87f5a2e))
-* add support for time.Duration write and scan ([2f1b74e](https://github.com/go-redis/redis/commit/2f1b74e20cdd7719b2aecf0768d3e3ae7c3e781b))
-* **redisotel:** ability to override TracerProvider ([#1998](https://github.com/go-redis/redis/issues/1998)) ([bf8d4aa](https://github.com/go-redis/redis/commit/bf8d4aa60c00366cda2e98c3ddddc8cf68507417))
-* set net.peer.name and net.peer.port in otel example ([69bf454](https://github.com/go-redis/redis/commit/69bf454f706204211cd34835f76b2e8192d3766d))
+* add client info command ([#2483](https://github.com/redis/go-redis/issues/2483)) ([b8c7317](https://github.com/redis/go-redis/commit/b8c7317cc6af444603731f7017c602347c0ba61e))
+* no longer verify HELLO error messages ([#2515](https://github.com/redis/go-redis/issues/2515)) ([7b4f217](https://github.com/redis/go-redis/commit/7b4f2179cb5dba3d3c6b0c6f10db52b837c912c8))
+* read the structure to increase the judgment of the omitempty op… ([#2529](https://github.com/redis/go-redis/issues/2529)) ([37c057b](https://github.com/redis/go-redis/commit/37c057b8e597c5e8a0e372337f6a8ad27f6030af))
 
 
 
-## [8.11.4](https://github.com/go-redis/redis/compare/v8.11.3...v8.11.4) (2021-10-04)
+## [9.0.3](https://github.com/redis/go-redis/compare/v9.0.2...v9.0.3) (2023-04-02)
 
+### New Features
+
+- feat(scan): scan time.Time sets the default decoding (#2413)
+- Add support for CLUSTER LINKS command (#2504)
+- Add support for acl dryrun command (#2502)
+- Add support for COMMAND GETKEYS & COMMAND GETKEYSANDFLAGS (#2500)
+- Add support for LCS Command (#2480)
+- Add support for BZMPOP (#2456)
+- Adding support for ZMPOP command (#2408)
+- Add support for LMPOP (#2440)
+- feat: remove pool unused fields (#2438)
+- Expiretime and PExpireTime (#2426)
+- Implement `FUNCTION` group of commands (#2475)
+- feat(zadd): add ZAddLT and ZAddGT (#2429)
+- Add: Support for COMMAND LIST command (#2491)
+- Add support for BLMPOP (#2442)
+- feat: check pipeline.Do to prevent confusion with Exec (#2517)
+- Function stats, function kill, fcall and fcall_ro (#2486)
+- feat: Add support for CLUSTER SHARDS command (#2507)
+- feat(cmd): support for adding byte,bit parameters to the bitpos command (#2498)
+
+### Fixed
+
+- fix: eval api cmd.SetFirstKeyPos (#2501)
+- fix: limit the number of connections created (#2441)
+- fixed #2462  v9 continue support dragonfly,  it's Hello command return "NOAUTH Authentication required" error (#2479)
+- Fix for internal/hscan/structmap.go:89:23: undefined: reflect.Pointer (#2458)
+- fix: group lag can be null (#2448)
+
+### Maintenance
+
+- Updating to the latest version of redis (#2508)
+- Allowing for running tests on a port other than the fixed 6380 (#2466)
+- redis 7.0.8 in tests (#2450)
+- docs: Update redisotel example for v9 (#2425)
+- chore: update go mod, Upgrade golang.org/x/net version to 0.7.0 (#2476)
+- chore: add Chinese translation (#2436)
+- chore(deps): bump github.com/bsm/gomega from 1.20.0 to 1.26.0 (#2421)
+- chore(deps): bump github.com/bsm/ginkgo/v2 from 2.5.0 to 2.7.0 (#2420)
+- chore(deps): bump actions/setup-go from 3 to 4 (#2495)
+- docs: add instructions for the HSet api (#2503)
+- docs: add reading lag field comment (#2451)
+- test: update go mod before testing(go mod tidy) (#2423)
+- docs: fix comment typo (#2505)
+- test: remove testify (#2463)
+- refactor: change ListElementCmd to KeyValuesCmd. (#2443)
+- fix(appendArg): appendArg case special type (#2489)
+
+## [9.0.2](https://github.com/redis/go-redis/compare/v9.0.1...v9.0.2) (2023-02-01)
 
 ### Features
 
-* add acl auth support for sentinels ([f66582f](https://github.com/go-redis/redis/commit/f66582f44f3dc3a4705a5260f982043fde4aa634))
-* add Cmd.{String,Int,Float,Bool}Slice helpers and an example ([5d3d293](https://github.com/go-redis/redis/commit/5d3d293cc9c60b90871e2420602001463708ce24))
-* add SetVal method for each command ([168981d](https://github.com/go-redis/redis/commit/168981da2d84ee9e07d15d3e74d738c162e264c4))
+* upgrade OpenTelemetry, use the new metrics API. ([#2410](https://github.com/redis/go-redis/issues/2410)) ([e29e42c](https://github.com/redis/go-redis/commit/e29e42cde2755ab910d04185025dc43ce6f59c65))
 
+## v9 2023-01-30
 
+### Breaking
 
-## v9 UNRELEASED
+- Changed Pipelines to not be thread-safe any more.
 
-- Added support for [RESP3](https://github.com/antirez/RESP3/blob/master/spec.md) protocol.
-- Removed `Pipeline.Close` since there is no real need to explicitly manage pipeline resources.
-  `Pipeline.Discard` is still available if you want to reset commands for some reason.
-- Replaced `*redis.Z` with `redis.Z` since it is small enough to be passed as value.
+### Added
 
-## v8.11
+- Added support for [RESP3](https://github.com/antirez/RESP3/blob/master/spec.md) protocol. It was
+  contributed by @monkey92t who has done the majority of work in this release.
+- Added `ContextTimeoutEnabled` option that controls whether the client respects context timeouts
+  and deadlines. See
+  [Redis Timeouts](https://redis.uptrace.dev/guide/go-redis-debugging.html#timeouts) for details.
+- Added `ParseClusterURL` to parse URLs into `ClusterOptions`, for example,
+  `redis://user:password@localhost:6789?dial_timeout=3&read_timeout=6s&addr=localhost:6790&addr=localhost:6791`.
+- Added metrics instrumentation using `redisotel.IstrumentMetrics`. See
+  [documentation](https://redis.uptrace.dev/guide/go-redis-monitoring.html)
+- Added `redis.HasErrorPrefix` to help working with errors.
 
-- Remove OpenTelemetry metrics.
-- Supports more redis commands and options.
+### Changed
 
-## v8.10
+- Removed asynchronous cancellation based on the context timeout. It was racy in v8 and is
+  completely gone in v9.
+- Reworked hook interface and added `DialHook`.
+- Replaced `redisotel.NewTracingHook` with `redisotel.InstrumentTracing`. See
+  [example](example/otel) and
+  [documentation](https://redis.uptrace.dev/guide/go-redis-monitoring.html).
+- Replaced `*redis.Z` with `redis.Z` since it is small enough to be passed as value without making
+  an allocation.
+- Renamed the option `MaxConnAge` to `ConnMaxLifetime`.
+- Renamed the option `IdleTimeout` to `ConnMaxIdleTime`.
+- Removed connection reaper in favor of `MaxIdleConns`.
+- Removed `WithContext` since `context.Context` can be passed directly as an arg.
+- Removed `Pipeline.Close` since there is no real need to explicitly manage pipeline resources and
+  it can be safely reused via `sync.Pool` etc. `Pipeline.Discard` is still available if you want to
+  reset commands for some reason.
 
-- Removed extra OpenTelemetry spans from go-redis core. Now go-redis instrumentation only adds a
-  single span with a Redis command (instead of 4 spans). There are multiple reasons behind this
-  decision:
+### Fixed
 
-  - Traces become smaller and less noisy.
-  - It may be costly to process those 3 extra spans for each query.
-  - go-redis no longer depends on OpenTelemetry.
-
-  Eventually we hope to replace the information that we no longer collect with OpenTelemetry
-  Metrics.
-
-## v8.9
-
-- Changed `PubSub.Channel` to only rely on `Ping` result. You can now use `WithChannelSize`,
-  `WithChannelHealthCheckInterval`, and `WithChannelSendTimeout` to override default settings.
-
-## v8.8
-
-- To make updating easier, extra modules now have the same version as go-redis does. That means that
-  you need to update your imports:
-
-```
-github.com/go-redis/redis/extra/redisotel -> github.com/go-redis/redis/extra/redisotel/v8
-github.com/go-redis/redis/extra/rediscensus -> github.com/go-redis/redis/extra/rediscensus/v8
-```
-
-## v8.5
-
-- [knadh](https://github.com/knadh) contributed long-awaited ability to scan Redis Hash into a
-  struct:
-
-```go
-err := rdb.HGetAll(ctx, "hash").Scan(&data)
-
-err := rdb.MGet(ctx, "key1", "key2").Scan(&data)
-```
-
-- Please check [redismock](https://github.com/go-redis/redismock) by
-  [monkey92t](https://github.com/monkey92t) if you are looking for mocking Redis Client.
-
-## v8
-
-- All commands require `context.Context` as a first argument, e.g. `rdb.Ping(ctx)`. If you are not
-  using `context.Context` yet, the simplest option is to define global package variable
-  `var ctx = context.TODO()` and use it when `ctx` is required.
-
-- Full support for `context.Context` canceling.
-
-- Added `redis.NewFailoverClusterClient` that supports routing read-only commands to a slave node.
-
-- Added `redisext.OpenTemetryHook` that adds
-  [Redis OpenTelemetry instrumentation](https://redis.uptrace.dev/tracing/).
-
-- Redis slow log support.
-
-- Ring uses Rendezvous Hashing by default which provides better distribution. You need to move
-  existing keys to a new location or keys will be inaccessible / lost. To use old hashing scheme:
-
-```go
-import "github.com/golang/groupcache/consistenthash"
-
-ring := redis.NewRing(&redis.RingOptions{
-    NewConsistentHash: func() {
-        return consistenthash.New(100, crc32.ChecksumIEEE)
-    },
-})
-```
-
-- `ClusterOptions.MaxRedirects` default value is changed from 8 to 3.
-- `Options.MaxRetries` default value is changed from 0 to 3.
-
-- `Cluster.ForEachNode` is renamed to `ForEachShard` for consistency with `Ring`.
-
-## v7.3
-
-- New option `Options.Username` which causes client to use `AuthACL`. Be aware if your connection
-  URL contains username.
-
-## v7.2
-
-- Existing `HMSet` is renamed to `HSet` and old deprecated `HMSet` is restored for Redis 3 users.
-
-## v7.1
-
-- Existing `Cmd.String` is renamed to `Cmd.Text`. New `Cmd.String` implements `fmt.Stringer`
-  interface.
-
-## v7
-
-- _Important_. Tx.Pipeline now returns a non-transactional pipeline. Use Tx.TxPipeline for a
-  transactional pipeline.
-- WrapProcess is replaced with more convenient AddHook that has access to context.Context.
-- WithContext now can not be used to create a shallow copy of the client.
-- New methods ProcessContext, DoContext, and ExecContext.
-- Client respects Context.Deadline when setting net.Conn deadline.
-- Client listens on Context.Done while waiting for a connection from the pool and returns an error
-  when context context is cancelled.
-- Add PubSub.ChannelWithSubscriptions that sends `*Subscription` in addition to `*Message` to allow
-  detecting reconnections.
-- `time.Time` is now marshalled in RFC3339 format. `rdb.Get("foo").Time()` helper is added to parse
-  the time.
-- `SetLimiter` is removed and added `Options.Limiter` instead.
-- `HMSet` is deprecated as of Redis v4.
-
-## v6.15
-
-- Cluster and Ring pipelines process commands for each node in its own goroutine.
-
-## 6.14
-
-- Added Options.MinIdleConns.
-- Added Options.MaxConnAge.
-- PoolStats.FreeConns is renamed to PoolStats.IdleConns.
-- Add Client.Do to simplify creating custom commands.
-- Add Cmd.String, Cmd.Int, Cmd.Int64, Cmd.Uint64, Cmd.Float64, and Cmd.Bool helpers.
-- Lower memory usage.
-
-## v6.13
-
-- Ring got new options called `HashReplicas` and `Hash`. It is recommended to set
-  `HashReplicas = 1000` for better keys distribution between shards.
-- Cluster client was optimized to use much less memory when reloading cluster state.
-- PubSub.ReceiveMessage is re-worked to not use ReceiveTimeout so it does not lose data when timeout
-  occurres. In most cases it is recommended to use PubSub.Channel instead.
-- Dialer.KeepAlive is set to 5 minutes by default.
-
-## v6.12
-
-- ClusterClient got new option called `ClusterSlots` which allows to build cluster of normal Redis
-  Servers that don't have cluster mode enabled. See
-  https://godoc.org/github.com/go-redis/redis#example-NewClusterClient--ManualSetup
+- Improved and fixed pipeline retries.
+- As usually, added support for more commands and fixed some bugs.

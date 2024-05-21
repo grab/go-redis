@@ -1,8 +1,6 @@
 package redis_test
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -12,15 +10,13 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/bsm/ginkgo/v2"
+	. "github.com/bsm/gomega"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 const (
-	redisPort          = "6380"
-	redisAddr          = ":" + redisPort
 	redisSecondaryPort = "6381"
 )
 
@@ -39,6 +35,9 @@ const (
 	sentinelPort2      = "9127"
 	sentinelPort3      = "9128"
 )
+
+var redisPort = "6380"
+var redisAddr = ":" + redisPort
 
 var (
 	sentinelAddrs = []string{":" + sentinelPort1, ":" + sentinelPort2, ":" + sentinelPort3}
@@ -66,6 +65,11 @@ func registerProcess(port string, p *redisProcess) {
 }
 
 var _ = BeforeSuite(func() {
+	addr := os.Getenv("REDIS_PORT")
+	if addr != "" {
+		redisPort = addr
+		redisAddr = ":" + redisPort
+	}
 	var err error
 
 	redisMain, err = startRedis(redisPort)
@@ -124,16 +128,16 @@ func redisOptions() *redis.Options {
 		Addr: redisAddr,
 		DB:   15,
 
-		DialTimeout:  10 * time.Second,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		DialTimeout:           10 * time.Second,
+		ReadTimeout:           30 * time.Second,
+		WriteTimeout:          30 * time.Second,
+		ContextTimeoutEnabled: true,
 
 		MaxRetries: -1,
 
-		PoolSize:           10,
-		PoolTimeout:        30 * time.Second,
-		IdleTimeout:        time.Minute,
-		IdleCheckFrequency: 100 * time.Millisecond,
+		PoolSize:        10,
+		PoolTimeout:     30 * time.Second,
+		ConnMaxIdleTime: time.Minute,
 	}
 }
 
@@ -145,10 +149,9 @@ func redisClusterOptions() *redis.ClusterOptions {
 
 		MaxRedirects: 8,
 
-		PoolSize:           10,
-		PoolTimeout:        30 * time.Second,
-		IdleTimeout:        time.Minute,
-		IdleCheckFrequency: 100 * time.Millisecond,
+		PoolSize:        10,
+		PoolTimeout:     30 * time.Second,
+		ConnMaxIdleTime: time.Minute,
 	}
 }
 
@@ -165,10 +168,9 @@ func redisRingOptions() *redis.RingOptions {
 
 		MaxRetries: -1,
 
-		PoolSize:           10,
-		PoolTimeout:        30 * time.Second,
-		IdleTimeout:        time.Minute,
-		IdleCheckFrequency: 100 * time.Millisecond,
+		PoolSize:        10,
+		PoolTimeout:     30 * time.Second,
+		ConnMaxIdleTime: time.Minute,
 	}
 }
 
@@ -272,7 +274,7 @@ func (p *redisProcess) Close() error {
 		if err := p.Client.Ping(ctx).Err(); err != nil {
 			return nil
 		}
-		return errors.New("client is not shutdown")
+		return fmt.Errorf("client %s is not shutdown", p.Options().Addr)
 	}, 10*time.Second)
 	if err != nil {
 		return err
@@ -283,8 +285,9 @@ func (p *redisProcess) Close() error {
 }
 
 var (
-	redisServerBin, _  = filepath.Abs(filepath.Join("testdata", "redis", "src", "redis-server"))
-	redisServerConf, _ = filepath.Abs(filepath.Join("testdata", "redis", "redis.conf"))
+	redisServerBin, _    = filepath.Abs(filepath.Join("testdata", "redis", "src", "redis-server"))
+	redisServerConf, _   = filepath.Abs(filepath.Join("testdata", "redis", "redis.conf"))
+	redisSentinelConf, _ = filepath.Abs(filepath.Join("testdata", "redis", "sentinel.conf"))
 )
 
 func redisDir(port string) (string, error) {
@@ -306,11 +309,12 @@ func startRedis(port string, args ...string) (*redisProcess, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = exec.Command("cp", "-f", redisServerConf, dir).Run(); err != nil {
+
+	if err := exec.Command("cp", "-f", redisServerConf, dir).Run(); err != nil {
 		return nil, err
 	}
 
-	baseArgs := []string{filepath.Join(dir, "redis.conf"), "--port", port, "--dir", dir}
+	baseArgs := []string{filepath.Join(dir, "redis.conf"), "--port", port, "--dir", dir, "--enable-module-command", "yes"}
 	process, err := execCmd(redisServerBin, append(baseArgs, args...)...)
 	if err != nil {
 		return nil, err
@@ -324,7 +328,7 @@ func startRedis(port string, args ...string) (*redisProcess, error) {
 
 	p := &redisProcess{process, client}
 	registerProcess(port, p)
-	return p, err
+	return p, nil
 }
 
 func startSentinel(port, masterName, masterPort string) (*redisProcess, error) {
@@ -333,7 +337,12 @@ func startSentinel(port, masterName, masterPort string) (*redisProcess, error) {
 		return nil, err
 	}
 
-	process, err := execCmd(redisServerBin, os.DevNull, "--sentinel", "--port", port, "--dir", dir)
+	sentinelConf := filepath.Join(dir, "sentinel.conf")
+	if err := os.WriteFile(sentinelConf, nil, 0o644); err != nil {
+		return nil, err
+	}
+
+	process, err := execCmd(redisServerBin, sentinelConf, "--sentinel", "--port", port, "--dir", dir)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +364,7 @@ func startSentinel(port, masterName, masterPort string) (*redisProcess, error) {
 		client.Process(ctx, cmd)
 		if err := cmd.Err(); err != nil {
 			process.Kill()
-			return nil, err
+			return nil, fmt.Errorf("%s failed: %w", cmd, err)
 		}
 	}
 
@@ -412,37 +421,28 @@ func (cn *badConn) Write([]byte) (int, error) {
 //------------------------------------------------------------------------------
 
 type hook struct {
-	beforeProcess func(ctx context.Context, cmd redis.Cmder) (context.Context, error)
-	afterProcess  func(ctx context.Context, cmd redis.Cmder) error
-
-	beforeProcessPipeline func(ctx context.Context, cmds []redis.Cmder) (context.Context, error)
-	afterProcessPipeline  func(ctx context.Context, cmds []redis.Cmder) error
+	dialHook            func(hook redis.DialHook) redis.DialHook
+	processHook         func(hook redis.ProcessHook) redis.ProcessHook
+	processPipelineHook func(hook redis.ProcessPipelineHook) redis.ProcessPipelineHook
 }
 
-func (h *hook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
-	if h.beforeProcess != nil {
-		return h.beforeProcess(ctx, cmd)
+func (h *hook) DialHook(hook redis.DialHook) redis.DialHook {
+	if h.dialHook != nil {
+		return h.dialHook(hook)
 	}
-	return ctx, nil
+	return hook
 }
 
-func (h *hook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
-	if h.afterProcess != nil {
-		return h.afterProcess(ctx, cmd)
+func (h *hook) ProcessHook(hook redis.ProcessHook) redis.ProcessHook {
+	if h.processHook != nil {
+		return h.processHook(hook)
 	}
-	return nil
+	return hook
 }
 
-func (h *hook) BeforeProcessPipeline(ctx context.Context, cmds []redis.Cmder) (context.Context, error) {
-	if h.beforeProcessPipeline != nil {
-		return h.beforeProcessPipeline(ctx, cmds)
+func (h *hook) ProcessPipelineHook(hook redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	if h.processPipelineHook != nil {
+		return h.processPipelineHook(hook)
 	}
-	return ctx, nil
-}
-
-func (h *hook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
-	if h.afterProcessPipeline != nil {
-		return h.afterProcessPipeline(ctx, cmds)
-	}
-	return nil
+	return hook
 }

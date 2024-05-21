@@ -2,7 +2,7 @@ package redis
 
 import (
 	"context"
-	"sync"
+	"errors"
 )
 
 type pipelineExecer func(context.Context, []Cmder) error
@@ -11,7 +11,7 @@ type pipelineExecer func(context.Context, []Cmder) error
 //
 // Pipelining is a technique to extremely speed up processing by packing
 // operations to batches, send them at once to Redis and read a replies in a
-// singe step.
+// single step.
 // See https://redis.io/topics/pipelining
 //
 // Pay attention, that Pipeline is not a transaction, so you can get unexpected
@@ -22,26 +22,34 @@ type pipelineExecer func(context.Context, []Cmder) error
 // depends of your batch size and/or use TxPipeline.
 type Pipeliner interface {
 	StatefulCmdable
+
+	// Len is to obtain the number of commands in the pipeline that have not yet been executed.
 	Len() int
+
+	// Do is an API for executing any command.
+	// If a certain Redis command is not yet supported, you can use Do to execute it.
 	Do(ctx context.Context, args ...interface{}) *Cmd
+
+	// Process is to put the commands to be executed into the pipeline buffer.
 	Process(ctx context.Context, cmd Cmder) error
+
+	// Discard is to discard all commands in the cache that have not yet been executed.
 	Discard()
+
+	// Exec is to send all the commands buffered in the pipeline to the redis-server.
 	Exec(ctx context.Context) ([]Cmder, error)
 }
 
 var _ Pipeliner = (*Pipeline)(nil)
 
 // Pipeline implements pipelining as described in
-// http://redis.io/topics/pipelining. It's safe for concurrent use
-// by multiple goroutines.
+// http://redis.io/topics/pipelining.
+// Please note: it is not safe for concurrent use by multiple goroutines.
 type Pipeline struct {
 	cmdable
 	statefulCmdable
 
-	ctx  context.Context
 	exec pipelineExecer
-
-	mu   sync.Mutex
 	cmds []Cmder
 }
 
@@ -52,32 +60,29 @@ func (c *Pipeline) init() {
 
 // Len returns the number of queued commands.
 func (c *Pipeline) Len() int {
-	c.mu.Lock()
-	ln := len(c.cmds)
-	c.mu.Unlock()
-	return ln
+	return len(c.cmds)
 }
 
 // Do queues the custom command for later execution.
 func (c *Pipeline) Do(ctx context.Context, args ...interface{}) *Cmd {
 	cmd := NewCmd(ctx, args...)
+	if len(args) == 0 {
+		cmd.SetErr(errors.New("redis: please enter the command to be executed"))
+		return cmd
+	}
 	_ = c.Process(ctx, cmd)
 	return cmd
 }
 
 // Process queues the cmd for later execution.
 func (c *Pipeline) Process(ctx context.Context, cmd Cmder) error {
-	c.mu.Lock()
 	c.cmds = append(c.cmds, cmd)
-	c.mu.Unlock()
 	return nil
 }
 
 // Discard resets the pipeline and discards queued commands.
 func (c *Pipeline) Discard() {
-	c.mu.Lock()
 	c.cmds = c.cmds[:0]
-	c.mu.Unlock()
 }
 
 // Exec executes all previously queued commands using one
@@ -86,9 +91,6 @@ func (c *Pipeline) Discard() {
 // Exec always returns list of commands and error of the first failed
 // command if any.
 func (c *Pipeline) Exec(ctx context.Context) ([]Cmder, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	if len(c.cmds) == 0 {
 		return nil, nil
 	}

@@ -1,10 +1,13 @@
 package hscan
 
 import (
+	"encoding"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/redis/go-redis/v9/internal/util"
 )
 
 // structMap contains the map of struct fields for target structs
@@ -84,7 +87,32 @@ func (s StructValue) Scan(key string, value string) error {
 	if !ok {
 		return nil
 	}
-	if err := field.fn(s.value.Field(field.index), value); err != nil {
+
+	v := s.value.Field(field.index)
+	isPtr := v.Kind() == reflect.Ptr
+
+	if isPtr && v.IsNil() {
+		v.Set(reflect.New(v.Type().Elem()))
+	}
+	if !isPtr && v.Type().Name() != "" && v.CanAddr() {
+		v = v.Addr()
+		isPtr = true
+	}
+
+	if isPtr && v.Type().NumMethod() > 0 && v.CanInterface() {
+		switch scan := v.Interface().(type) {
+		case Scanner:
+			return scan.ScanRedis(value)
+		case encoding.TextUnmarshaler:
+			return scan.UnmarshalText(util.StringToBytes(value))
+		}
+	}
+
+	if isPtr {
+		v = v.Elem()
+	}
+
+	if err := field.fn(v, value); err != nil {
 		t := s.value.Type()
 		return fmt.Errorf("cannot scan redis.result %s into struct field %s.%s of type %s, error-%s",
 			value, t.Name(), t.Field(field.index).Name, t.Field(field.index).Type, err.Error())

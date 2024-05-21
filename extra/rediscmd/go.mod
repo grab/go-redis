@@ -1,11 +1,11 @@
-module github.com/go-redis/redis/extra/rediscmd/v8
+module github.com/redis/go-redis/extra/rediscmd/v9
 
 go 1.15
 
-replace github.com/go-redis/redis/v8 => ../..
+replace github.com/redis/go-redis/v9 => ../..
 
 require (
-	github.com/go-redis/redis/v8 v8.11.5
-	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.18.1
+	github.com/bsm/ginkgo/v2 v2.7.0
+	github.com/bsm/gomega v1.26.0
+	github.com/redis/go-redis/v9 v9.0.5
 )

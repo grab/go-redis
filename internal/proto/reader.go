@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/go-redis/redis/v8/internal/util"
+	"github.com/redis/go-redis/v9/internal/util"
 )
 
 // redis resp protocol data type.
@@ -124,7 +124,7 @@ func (r *Reader) ReadLine() ([]byte, error) {
 	return line, nil
 }
 
-// readLine that returns an error if:
+// readLine returns an error if:
 //   - there is a pending read error;
 //   - or line does not end with \r\n.
 func (r *Reader) readLine() ([]byte, error) {
@@ -189,6 +189,8 @@ func (r *Reader) readFloat(line []byte) (float64, error) {
 		return math.Inf(1), nil
 	case "-inf":
 		return math.Inf(-1), nil
+	case "nan", "-nan":
+		return math.NaN(), nil
 	}
 	return strconv.ParseFloat(v, 64)
 }
@@ -319,6 +321,33 @@ func (r *Reader) ReadInt() (int64, error) {
 	return 0, fmt.Errorf("redis: can't parse int reply: %.100q", line)
 }
 
+func (r *Reader) ReadUint() (uint64, error) {
+	line, err := r.ReadLine()
+	if err != nil {
+		return 0, err
+	}
+	switch line[0] {
+	case RespInt, RespStatus:
+		return util.ParseUint(line[1:], 10, 64)
+	case RespString:
+		s, err := r.readStringReply(line)
+		if err != nil {
+			return 0, err
+		}
+		return util.ParseUint([]byte(s), 10, 64)
+	case RespBigInt:
+		b, err := r.readBigInt(line)
+		if err != nil {
+			return 0, err
+		}
+		if !b.IsUint64() {
+			return 0, fmt.Errorf("bigInt(%s) value out of range", b.String())
+		}
+		return b.Uint64(), nil
+	}
+	return 0, fmt.Errorf("redis: can't parse uint reply: %.100q", line)
+}
+
 func (r *Reader) ReadFloat() (float64, error) {
 	line, err := r.ReadLine()
 	if err != nil {
@@ -388,7 +417,7 @@ func (r *Reader) ReadFixedArrayLen(fixedLen int) error {
 		return err
 	}
 	if n != fixedLen {
-		return fmt.Errorf("redis: got %d elements of array length, wanted %d", n, fixedLen)
+		return fmt.Errorf("redis: got %d elements in the array, wanted %d", n, fixedLen)
 	}
 	return nil
 }
@@ -403,23 +432,23 @@ func (r *Reader) ReadArrayLen() (int, error) {
 	case RespArray, RespSet, RespPush:
 		return replyLen(line)
 	default:
-		return 0, fmt.Errorf("redis: can't parse array(array/set/push) reply: %.100q", line)
+		return 0, fmt.Errorf("redis: can't parse array/set/push reply: %.100q", line)
 	}
 }
 
-// ReadFixedMapLen read fixed map length.
+// ReadFixedMapLen reads fixed map length.
 func (r *Reader) ReadFixedMapLen(fixedLen int) error {
 	n, err := r.ReadMapLen()
 	if err != nil {
 		return err
 	}
 	if n != fixedLen {
-		return fmt.Errorf("redis: got %d elements of map length, wanted %d", n, fixedLen)
+		return fmt.Errorf("redis: got %d elements in the map, wanted %d", n, fixedLen)
 	}
 	return nil
 }
 
-// ReadMapLen read the length of the map type.
+// ReadMapLen reads the length of the map type.
 // If responding to the array type (RespArray/RespSet/RespPush),
 // it must be a multiple of 2 and return n/2.
 // Other types will return an error.
@@ -444,6 +473,15 @@ func (r *Reader) ReadMapLen() (int, error) {
 	default:
 		return 0, fmt.Errorf("redis: can't parse map reply: %.100q", line)
 	}
+}
+
+// DiscardNext read and discard the data represented by the next line.
+func (r *Reader) DiscardNext() error {
+	line, err := r.readLine()
+	if err != nil {
+		return err
+	}
+	return r.Discard(line)
 }
 
 // Discard the data represented by line.
@@ -486,15 +524,6 @@ func (r *Reader) Discard(line []byte) (err error) {
 	return fmt.Errorf("redis: can't parse %.100q", line)
 }
 
-// DiscardNext read and discard the data represented by the next line.
-func (r *Reader) DiscardNext() error {
-	line, err := r.readLine()
-	if err != nil {
-		return err
-	}
-	return r.Discard(line)
-}
-
 func replyLen(line []byte) (n int, err error) {
 	n, err = util.Atoi(line[1:])
 	if err != nil {
@@ -515,7 +544,7 @@ func replyLen(line []byte) (n int, err error) {
 	return n, nil
 }
 
-// IsNilReply detect redis.Nil of RESP2.
+// IsNilReply detects redis.Nil of RESP2.
 func IsNilReply(line []byte) bool {
 	return len(line) == 3 &&
 		(line[0] == RespString || line[0] == RespArray) &&

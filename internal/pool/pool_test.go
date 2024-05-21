@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "github.com/bsm/ginkgo/v2"
+	. "github.com/bsm/gomega"
 
-	"github.com/go-redis/redis/v8/internal/pool"
+	"github.com/redis/go-redis/v9/internal/pool"
 )
 
 var _ = Describe("ConnPool", func() {
@@ -19,11 +19,10 @@ var _ = Describe("ConnPool", func() {
 
 	BeforeEach(func() {
 		connPool = pool.NewConnPool(&pool.Options{
-			Dialer:             dummyDialer,
-			PoolSize:           10,
-			PoolTimeout:        time.Hour,
-			IdleTimeout:        time.Millisecond,
-			IdleCheckFrequency: time.Millisecond,
+			Dialer:          dummyDialer,
+			PoolSize:        10,
+			PoolTimeout:     time.Hour,
+			ConnMaxIdleTime: time.Millisecond,
 		})
 	})
 
@@ -45,11 +44,10 @@ var _ = Describe("ConnPool", func() {
 				<-closedChan
 				return &net.TCPConn{}, nil
 			},
-			PoolSize:           10,
-			PoolTimeout:        time.Hour,
-			IdleTimeout:        time.Millisecond,
-			IdleCheckFrequency: time.Millisecond,
-			MinIdleConns:       minIdleConns,
+			PoolSize:        10,
+			PoolTimeout:     time.Hour,
+			ConnMaxIdleTime: time.Millisecond,
+			MinIdleConns:    minIdleConns,
 		})
 		wg.Wait()
 		Expect(connPool.Close()).NotTo(HaveOccurred())
@@ -127,12 +125,11 @@ var _ = Describe("MinIdleConns", func() {
 
 	newConnPool := func() *pool.ConnPool {
 		connPool := pool.NewConnPool(&pool.Options{
-			Dialer:             dummyDialer,
-			PoolSize:           poolSize,
-			MinIdleConns:       minIdleConns,
-			PoolTimeout:        100 * time.Millisecond,
-			IdleTimeout:        -1,
-			IdleCheckFrequency: -1,
+			Dialer:          dummyDialer,
+			PoolSize:        poolSize,
+			MinIdleConns:    minIdleConns,
+			PoolTimeout:     100 * time.Millisecond,
+			ConnMaxIdleTime: -1,
 		})
 		Eventually(func() int {
 			return connPool.Len()
@@ -287,133 +284,6 @@ var _ = Describe("MinIdleConns", func() {
 	})
 })
 
-var _ = Describe("conns reaper", func() {
-	const idleTimeout = time.Minute
-	const maxAge = time.Hour
-
-	ctx := context.Background()
-	var connPool *pool.ConnPool
-	var conns, staleConns, closedConns []*pool.Conn
-
-	assert := func(typ string) {
-		BeforeEach(func() {
-			closedConns = nil
-			connPool = pool.NewConnPool(&pool.Options{
-				Dialer:             dummyDialer,
-				PoolSize:           10,
-				IdleTimeout:        idleTimeout,
-				MaxConnAge:         maxAge,
-				PoolTimeout:        time.Second,
-				IdleCheckFrequency: time.Hour,
-				OnClose: func(cn *pool.Conn) error {
-					closedConns = append(closedConns, cn)
-					return nil
-				},
-			})
-
-			conns = nil
-
-			// add stale connections
-			staleConns = nil
-			for i := 0; i < 3; i++ {
-				cn, err := connPool.Get(ctx)
-				Expect(err).NotTo(HaveOccurred())
-				switch typ {
-				case "idle":
-					cn.SetUsedAt(time.Now().Add(-2 * idleTimeout))
-				case "aged":
-					cn.SetCreatedAt(time.Now().Add(-2 * maxAge))
-				case "connCheck":
-					_ = cn.Close()
-				}
-				conns = append(conns, cn)
-				staleConns = append(staleConns, cn)
-			}
-
-			// add fresh connections
-			for i := 0; i < 3; i++ {
-				cn, err := connPool.Get(ctx)
-				Expect(err).NotTo(HaveOccurred())
-				conns = append(conns, cn)
-			}
-
-			for _, cn := range conns {
-				connPool.Put(ctx, cn)
-			}
-
-			Expect(connPool.Len()).To(Equal(6))
-			Expect(connPool.IdleLen()).To(Equal(6))
-
-			n, err := connPool.ReapStaleConns()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(n).To(Equal(3))
-		})
-
-		AfterEach(func() {
-			_ = connPool.Close()
-			Expect(connPool.Len()).To(Equal(0))
-			Expect(connPool.IdleLen()).To(Equal(0))
-			Expect(len(closedConns)).To(Equal(len(conns)))
-			Expect(closedConns).To(ConsistOf(conns))
-		})
-
-		It("reaps stale connections", func() {
-			Expect(connPool.Len()).To(Equal(3))
-			Expect(connPool.IdleLen()).To(Equal(3))
-		})
-
-		It("does not reap fresh connections", func() {
-			n, err := connPool.ReapStaleConns()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(n).To(Equal(0))
-		})
-
-		It("stale connections are closed", func() {
-			Expect(len(closedConns)).To(Equal(len(staleConns)))
-			Expect(closedConns).To(ConsistOf(staleConns))
-		})
-
-		It("pool is functional", func() {
-			for j := 0; j < 3; j++ {
-				var freeCns []*pool.Conn
-				for i := 0; i < 3; i++ {
-					cn, err := connPool.Get(ctx)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(cn).NotTo(BeNil())
-					freeCns = append(freeCns, cn)
-				}
-
-				Expect(connPool.Len()).To(Equal(3))
-				Expect(connPool.IdleLen()).To(Equal(0))
-
-				cn, err := connPool.Get(ctx)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cn).NotTo(BeNil())
-				conns = append(conns, cn)
-
-				Expect(connPool.Len()).To(Equal(4))
-				Expect(connPool.IdleLen()).To(Equal(0))
-
-				connPool.Remove(ctx, cn, nil)
-
-				Expect(connPool.Len()).To(Equal(3))
-				Expect(connPool.IdleLen()).To(Equal(0))
-
-				for _, cn := range freeCns {
-					connPool.Put(ctx, cn)
-				}
-
-				Expect(connPool.Len()).To(Equal(3))
-				Expect(connPool.IdleLen()).To(Equal(3))
-			}
-		})
-	}
-
-	assert("idle")
-	assert("aged")
-	assert("connCheck")
-})
-
 var _ = Describe("race", func() {
 	ctx := context.Background()
 	var connPool *pool.ConnPool
@@ -433,11 +303,10 @@ var _ = Describe("race", func() {
 
 	It("does not happen on Get, Put, and Remove", func() {
 		connPool = pool.NewConnPool(&pool.Options{
-			Dialer:             dummyDialer,
-			PoolSize:           10,
-			PoolTimeout:        time.Minute,
-			IdleTimeout:        time.Millisecond,
-			IdleCheckFrequency: time.Millisecond,
+			Dialer:          dummyDialer,
+			PoolSize:        10,
+			PoolTimeout:     time.Minute,
+			ConnMaxIdleTime: time.Millisecond,
 		})
 
 		perform(C, func(id int) {
@@ -457,5 +326,31 @@ var _ = Describe("race", func() {
 				}
 			}
 		})
+	})
+
+	It("limit the number of connections", func() {
+		opt := &pool.Options{
+			Dialer: func(ctx context.Context) (net.Conn, error) {
+				return &net.TCPConn{}, nil
+			},
+			PoolSize:     1000,
+			MinIdleConns: 50,
+			PoolTimeout:  3 * time.Second,
+		}
+		p := pool.NewConnPool(opt)
+
+		var wg sync.WaitGroup
+		for i := 0; i < opt.PoolSize; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				_, _ = p.Get(ctx)
+			}()
+		}
+		wg.Wait()
+
+		stats := p.Stats()
+		Expect(stats.IdleConns).To(Equal(uint32(0)))
+		Expect(stats.TotalConns).To(Equal(uint32(opt.PoolSize)))
 	})
 })
