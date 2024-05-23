@@ -2,7 +2,7 @@ module github.com/redis/go-redis/extra/rediscensus/v9
 
 go 1.15
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 replace github.com/redis/go-redis/extra/rediscmd/v9 => ../rediscmd
 

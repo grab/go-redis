@@ -2,7 +2,7 @@ module github.com/redis/go-redis/extra/redisprometheus/v9
 
 go 1.17
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 require (
 	github.com/prometheus/client_golang v1.14.0

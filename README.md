@@ -75,7 +75,7 @@ go mod init github.com/my/repo
 Then install go-redis/**v9**:
 
 ```shell
-go get github.com/redis/go-redis/v9
+go get gitlab.myteksi.net/dbops/Redis/v9
 ```
 
 ## Quickstart

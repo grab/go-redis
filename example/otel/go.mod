@@ -2,7 +2,7 @@ module github.com/redis/go-redis/example/otel
 
 go 1.19
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 replace github.com/redis/go-redis/extra/redisotel/v9 => ../../extra/redisotel
 
