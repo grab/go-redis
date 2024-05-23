@@ -5,7 +5,7 @@ go 1.18
 replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 require (
-	github.com/redis/go-redis/v9 v9.5.0
+	gitlab.myteksi.net/dbops/Redis/v9 v9.5.0
 	go.uber.org/zap v1.24.0
 )
 

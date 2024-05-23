@@ -9,10 +9,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/hscan"
-	"github.com/redis/go-redis/v9/internal/pool"
-	"github.com/redis/go-redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/hscan"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
 )
 
 // Scanner internal/hscan.Scanner exposed interface.
@@ -26,7 +26,7 @@ func SetLogger(logger internal.Logging) {
 	internal.Logger = logger
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type Hook interface {
 	DialHook(next DialHook) DialHook
@@ -193,7 +193,7 @@ func (hs *hooksMixin) processTxPipelineHook(ctx context.Context, cmds []Cmder) e
 	return hs.current.txPipeline(ctx, cmds)
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type baseClient struct {
 	opt      *Options
@@ -613,7 +613,7 @@ func (c *baseClient) context(ctx context.Context) context.Context {
 	return context.Background()
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // Client is a Redis client representing a pool of zero or more underlying connections.
 // It's safe for concurrent use by multiple goroutines.
@@ -783,7 +783,7 @@ func (c *Client) SSubscribe(ctx context.Context, channels ...string) *PubSub {
 	return pubsub
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // Conn represents a single Redis connection rather than a pool of connections.
 // Prefer running commands from Client unless there is a specific need

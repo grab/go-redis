@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
 )
 
 // KeepTTL is a Redis KEEPTTL option to keep existing TTL, it requires your redis-server version >= 6.0,
@@ -250,7 +250,7 @@ type cmdable func(ctx context.Context, cmd Cmder) error
 
 type statefulCmdable func(ctx context.Context, cmd Cmder) error
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 func (c statefulCmdable) Auth(ctx context.Context, password string) *StatusCmd {
 	cmd := NewStatusCmd(ctx, "auth", password)
@@ -351,7 +351,7 @@ func (c statefulCmdable) Hello(ctx context.Context,
 	return cmd
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 func (c cmdable) Command(ctx context.Context) *CommandsInfoCmd {
 	cmd := NewCommandsInfoCmd(ctx, "command")
@@ -426,7 +426,7 @@ func (c cmdable) Quit(_ context.Context) *StatusCmd {
 	panic("not implemented")
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 func (c cmdable) BgRewriteAOF(ctx context.Context) *StatusCmd {
 	cmd := NewStatusCmd(ctx, "bgrewriteaof")
@@ -669,7 +669,7 @@ func (c cmdable) MemoryUsage(ctx context.Context, key string, samples ...int) *I
 	return cmd
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // ModuleLoadexConfig struct is used to specify the arguments for the MODULE LOADEX command of redis.
 // `MODULE LOADEX path [CONFIG name value [CONFIG name value ...]] [ARGS args [args ...]]`

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/redis/go-redis/v9/internal/proto"
-	"github.com/redis/go-redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
 )
 
 // -------------------------------------------
@@ -274,7 +274,7 @@ func (cmd *IntPointerSliceCmd) readReply(rd *proto.Reader) error {
 	return nil
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // JSONArrAppend adds the provided JSON values to the end of the array at the given path.
 // For more information, see https://redis.io/commands/json.arrappend

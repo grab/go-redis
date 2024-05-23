@@ -14,8 +14,8 @@ import (
 	. "github.com/bsm/ginkgo/v2"
 	. "github.com/bsm/gomega"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/redis/go-redis/v9/internal/hashtag"
+	"gitlab.myteksi.net/dbops/Redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/hashtag"
 )
 
 type clusterScenario struct {
@@ -233,7 +233,7 @@ func slotEqual(s1, s2 redis.ClusterSlot) bool {
 	return true
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 var _ = Describe("ClusterClient", func() {
 	var failover bool

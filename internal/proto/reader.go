@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"strconv"
 
-	"github.com/redis/go-redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
 )
 
 // redis resp protocol data type.
@@ -36,7 +36,7 @@ const (
 // Streamed           = "EOF:"
 // StreamedAggregated = '?'
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 const Nil = RedisError("redis: nil") // nolint:errname
 
@@ -50,7 +50,7 @@ func ParseErrorReply(line []byte) error {
 	return RedisError(line[1:])
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type Reader struct {
 	rd *bufio.Reader

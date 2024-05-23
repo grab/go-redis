@@ -10,7 +10,7 @@ replace github.com/redis/go-redis/extra/rediscmd/v9 => ../../extra/rediscmd
 
 require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.5.0
-	github.com/redis/go-redis/v9 v9.5.0
+	gitlab.myteksi.net/dbops/Redis/v9 v9.5.0
 	github.com/uptrace/uptrace-go v1.21.0
 	go.opentelemetry.io/otel v1.21.0
 )

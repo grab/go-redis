@@ -14,11 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/hashtag"
-	"github.com/redis/go-redis/v9/internal/pool"
-	"github.com/redis/go-redis/v9/internal/proto"
-	"github.com/redis/go-redis/v9/internal/rand"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/hashtag"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/rand"
 )
 
 var errClusterNoNodes = fmt.Errorf("redis: cluster has no nodes")
@@ -306,7 +306,7 @@ func (opt *ClusterOptions) clientOptions() *Options {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterNode struct {
 	Client *Client
@@ -402,7 +402,7 @@ func (n *clusterNode) SetGeneration(gen uint32) {
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterNodes struct {
 	opt *ClusterOptions
@@ -579,7 +579,7 @@ func (c *clusterNodes) Random() (*clusterNode, error) {
 	return c.GetOrCreate(addrs[n])
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterSlot struct {
 	start, end int
@@ -781,7 +781,7 @@ func (c *clusterState) slotNodes(slot int) []*clusterNode {
 	return nil
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type clusterStateHolder struct {
 	load func(ctx context.Context) (*clusterState, error)
@@ -841,7 +841,7 @@ func (c *clusterStateHolder) ReloadOrGet(ctx context.Context) (*clusterState, er
 	return c.Get(ctx)
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // ClusterClient is a Redis Cluster client representing a pool of zero
 // or more underlying connections. It's safe for concurrent use by
@@ -1893,7 +1893,7 @@ loop:
 	return ss
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type cmdsMap struct {
 	mu sync.Mutex

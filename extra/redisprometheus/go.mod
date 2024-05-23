@@ -6,7 +6,7 @@ replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 require (
 	github.com/prometheus/client_golang v1.14.0
-	github.com/redis/go-redis/v9 v9.5.0
+	gitlab.myteksi.net/dbops/Redis/v9 v9.5.0
 )
 
 require (

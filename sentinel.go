@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/pool"
-	"github.com/redis/go-redis/v9/internal/rand"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/rand"
 )
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // FailoverOptions are used to configure a failover client and should
 // be passed to NewFailoverClient.
@@ -277,7 +277,7 @@ func masterReplicaDialer(
 	}
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // SentinelClient is a client for a Redis Sentinel.
 type SentinelClient struct {
@@ -442,7 +442,7 @@ func (c *SentinelClient) Remove(ctx context.Context, name string) *StringCmd {
 	return cmd
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type sentinelFailover struct {
 	opt *FailoverOptions
@@ -775,7 +775,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // NewFailoverClusterClient returns a client that supports routing read-only commands
 // to a replica node.

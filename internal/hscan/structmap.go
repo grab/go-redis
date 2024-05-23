@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/redis/go-redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
 )
 
 // structMap contains the map of struct fields for target structs
@@ -30,7 +30,7 @@ func (s *structMap) get(t reflect.Type) *structSpec {
 	return spec
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // structSpec contains the list of all fields in a target struct.
 type structSpec struct {
@@ -71,7 +71,7 @@ func newStructSpec(t reflect.Type, fieldTag string) *structSpec {
 	return out
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 // structField represents a single field in a target struct.
 type structField struct {
@@ -79,7 +79,7 @@ type structField struct {
 	fn    decoderFunc
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type StructValue struct {
 	spec  *structSpec

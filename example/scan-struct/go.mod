@@ -6,7 +6,7 @@ replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 require (
 	github.com/davecgh/go-spew v1.1.1
-	github.com/redis/go-redis/v9 v9.5.0
+	gitlab.myteksi.net/dbops/Redis/v9 v9.5.0
 )
 
 require (

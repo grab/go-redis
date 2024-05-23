@@ -1,7 +1,7 @@
 # Redis client for Go
 
 [![build workflow](https://github.com/redis/go-redis/actions/workflows/build.yml/badge.svg)](https://github.com/redis/go-redis/actions)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/redis/go-redis/v9)](https://pkg.go.dev/github.com/redis/go-redis/v9?tab=doc)
+[![PkgGoDev](https://pkg.go.dev/badge/gitlab.myteksi.net/dbops/Redis/v9)](https://pkg.go.dev/gitlab.myteksi.net/dbops/Redis/v9?tab=doc)
 [![Documentation](https://img.shields.io/badge/redis-documentation-informational)](https://redis.uptrace.dev/)
 [![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
@@ -36,8 +36,8 @@
 
 - [Discussions](https://github.com/redis/go-redis/discussions)
 - [Chat](https://discord.gg/rWtp5Aj)
-- [Reference](https://pkg.go.dev/github.com/redis/go-redis/v9)
-- [Examples](https://pkg.go.dev/github.com/redis/go-redis/v9#pkg-examples)
+- [Reference](https://pkg.go.dev/gitlab.myteksi.net/dbops/Redis/v9)
+- [Examples](https://pkg.go.dev/gitlab.myteksi.net/dbops/Redis/v9#pkg-examples)
 
 ## Ecosystem
 
@@ -85,7 +85,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/redis/go-redis/v9"
+    "gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 var ctx = context.Background()
@@ -146,7 +146,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/redis/go-redis/v9"
+    "gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 func ExampleClient() *redis.Client {

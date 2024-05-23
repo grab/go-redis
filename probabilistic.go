@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/redis/go-redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
 )
 
 type ProbabilisticCmdable interface {
@@ -109,7 +109,7 @@ type CFInsertOptions struct {
 
 // -------------------------------------------
 // Bloom filter commands
-//-------------------------------------------
+// -------------------------------------------
 
 // BFReserve creates an empty Bloom filter with a single sub-filter
 // for the initial specified capacity and with an upper bound error_rate.
@@ -451,7 +451,7 @@ func (c cmdable) BFMExists(ctx context.Context, key string, elements ...interfac
 
 // -------------------------------------------
 // Cuckoo filter commands
-//-------------------------------------------
+// -------------------------------------------
 
 // CFReserve creates an empty Cuckoo filter with the specified capacity.
 // For more information - https://redis.io/commands/cf.reserve/
@@ -724,7 +724,7 @@ func (c cmdable) CFMExists(ctx context.Context, key string, elements ...interfac
 
 // -------------------------------------------
 // CMS commands
-//-------------------------------------------
+// -------------------------------------------
 
 // CMSIncrBy increments the count of one or more items in a Count-Min Sketch filter.
 // Returns an array of integers representing the updated count of each item.
@@ -895,7 +895,7 @@ func (c cmdable) CMSQuery(ctx context.Context, key string, elements ...interface
 
 // -------------------------------------------
 // TopK commands
-//--------------------------------------------
+// --------------------------------------------
 
 // TopKAdd adds one or more elements to a Top-K filter.
 // Returns an array of strings representing the items that were removed from the filter, if any.

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 func benchmarkRedisClient(ctx context.Context, poolSize int) *redis.Client {
@@ -273,7 +273,7 @@ func BenchmarkXRead(b *testing.B) {
 	})
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 func newClusterScenario() *clusterScenario {
 	return &clusterScenario{

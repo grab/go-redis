@@ -14,7 +14,7 @@ import (
 	. "github.com/bsm/ginkgo/v2"
 	. "github.com/bsm/gomega"
 
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 const (
@@ -140,7 +140,7 @@ func TestGinkgoSuite(t *testing.T) {
 	RunSpecs(t, "go-redis")
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 func redisOptions() *redis.Options {
 	if RECluster {
@@ -409,7 +409,7 @@ func startSentinel(port, masterName, masterPort string) (*redisProcess, error) {
 	return p, nil
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type badConnError string
 
@@ -454,7 +454,7 @@ func (cn *badConn) Write([]byte) (int, error) {
 	return 0, badConnError("bad connection")
 }
 
-//------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 
 type hook struct {
 	dialHook            func(hook redis.DialHook) redis.DialHook

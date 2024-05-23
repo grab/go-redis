@@ -10,7 +10,7 @@ import (
 	. "github.com/bsm/ginkgo/v2"
 	. "github.com/bsm/gomega"
 
-	"github.com/redis/go-redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
 )
 
 var _ = Describe("ConnPool", func() {

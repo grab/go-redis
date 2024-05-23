@@ -13,7 +13,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/redis/go-redis/extra/rediscmd/v9"
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 const (

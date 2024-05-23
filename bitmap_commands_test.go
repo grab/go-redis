@@ -3,7 +3,7 @@ package redis_test
 import (
 	. "github.com/bsm/ginkgo/v2"
 	. "github.com/bsm/gomega"
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 type bitCountExpected struct {
