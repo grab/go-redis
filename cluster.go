@@ -226,6 +226,10 @@ func (n *clusterNode) MarkAsFailing() {
 }
 
 func (n *clusterNode) Failing() bool {
+	if !n.Client.Allow() {
+		return true
+	}
+
 	const timeout = 15 // 15 seconds
 
 	failing := atomic.LoadUint32(&n.failing)
@@ -804,7 +808,7 @@ func (c *ClusterClient) process(ctx context.Context, cmd Cmder) error {
 		if lastErr == nil {
 			return nil
 		}
-		if isReadOnly := isReadOnlyError(lastErr); isReadOnly || lastErr == pool.ErrClosed {
+		if isReadOnly := IsReadOnlyError(lastErr); isReadOnly || lastErr == pool.ErrClosed {
 			if isReadOnly {
 				c.state.LazyReload()
 			}
@@ -1480,7 +1484,7 @@ func (c *ClusterClient) Watch(ctx context.Context, fn func(*Tx) error, keys ...s
 			continue
 		}
 
-		if isReadOnly := isReadOnlyError(err); isReadOnly || err == pool.ErrClosed {
+		if isReadOnly := IsReadOnlyError(err); isReadOnly || err == pool.ErrClosed {
 			if isReadOnly {
 				c.state.LazyReload()
 			}
