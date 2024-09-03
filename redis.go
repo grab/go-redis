@@ -365,6 +365,16 @@ func (c *baseClient) withConn(
 		return err
 	}
 
+	// always attempt getConn to init the pool first so the following _withConn will have the valid conn
+	cn, connerr := c.getConn(ctx)
+	if connerr != nil {
+		return connerr
+	}
+
+	defer func() {
+		c.releaseConn(ctx, cn, connerr)
+	}()
+
 	err := limiter.Execute(func() error {
 		return c._withConn(ctx, fn)
 	})
