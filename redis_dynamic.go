@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
 )
 
 // NewDynamicClient is similar to NewClient, but it uses a dynamic pool instead to provide dynamic connection management

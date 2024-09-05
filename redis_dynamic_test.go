@@ -162,6 +162,10 @@ var limiterError = fmt.Errorf("limiter error")
 type errorLimiter struct {
 }
 
+func (*errorLimiter) Execute(f func() error) error {
+	return limiterError
+}
+
 func (*errorLimiter) Allow() error {
 	return limiterError
 }
@@ -172,6 +176,10 @@ func (*errorLimiter) ReportResult(result error) {
 
 type normalLimiter struct {
 	errors []error
+}
+
+func (*normalLimiter) Execute(f func() error) error {
+	return nil
 }
 
 func (*normalLimiter) Allow() error {

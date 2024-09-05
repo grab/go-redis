@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
 )
 
 // NewDynamicClusterClient is similar to NewClusterClient, but it supports dynamic connection pool management
