@@ -141,7 +141,14 @@ func isLoadingError(err error) bool {
 }
 
 func isReadOnlyError(err error) bool {
-	return strings.HasPrefix(err.Error(), "READONLY ")
+	redisError := err.Error()
+	if strings.HasPrefix(redisError, "READONLY ") {
+		return true
+	}
+
+	// For a Lua script that includes write commands, the read-only error string
+	// contains "-READONLY" rather than beginning with "READONLY "
+	return strings.Contains(redisError, "-READONLY")
 }
 
 func isMovedSameConnAddr(err error, addr string) bool {
