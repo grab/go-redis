@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/redis/go-redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
 )
 
 // structMap contains the map of struct fields for target structs

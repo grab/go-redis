@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 func CmdString(cmd redis.Cmder) string {

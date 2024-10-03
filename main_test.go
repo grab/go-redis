@@ -2,6 +2,7 @@ package redis_test
 
 import (
 	"fmt"
+	redis "gitlab.myteksi.net/dbops/Redis/v9"
 	"net"
 	"os"
 	"os/exec"
@@ -13,8 +14,6 @@ import (
 
 	. "github.com/bsm/ginkgo/v2"
 	. "github.com/bsm/gomega"
-
-	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -350,7 +349,8 @@ func startRedis(port string, args ...string) (*redisProcess, error) {
 		return nil, err
 	}
 
-	baseArgs := []string{filepath.Join(dir, "redis.conf"), "--port", port, "--dir", dir, "--enable-module-command", "yes"}
+	//baseArgs := []string{filepath.Join(dir, "redis.conf"), "--port", port, "--dir", dir, "--enable-module-command", "yes"}
+	baseArgs := []string{filepath.Join(dir, "redis.conf"), "--port", port, "--dir", dir}
 	process, err := execCmd(redisServerBin, append(baseArgs, args...)...)
 	if err != nil {
 		return nil, err

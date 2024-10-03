@@ -3,9 +3,8 @@ package redis_test
 import (
 	"context"
 	"fmt"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 	"net"
-
-	"github.com/redis/go-redis/v9"
 )
 
 type redisHook struct{}

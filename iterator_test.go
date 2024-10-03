@@ -2,11 +2,9 @@ package redis_test
 
 import (
 	"fmt"
-
 	. "github.com/bsm/ginkgo/v2"
 	. "github.com/bsm/gomega"
-
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 var _ = Describe("ScanIterator", func() {
@@ -99,20 +97,21 @@ var _ = Describe("ScanIterator", func() {
 		Expect(vals).To(ContainElement("x"))
 	})
 
-	It("should hscan without values across multiple pages", Label("NonRedisEnterprise"), func() {
-		Expect(hashSeed(71)).NotTo(HaveOccurred())
-
-		var vals []string
-		iter := client.HScanNoValues(ctx, hashKey, 0, "", 10).Iterator()
-		for iter.Next(ctx) {
-			vals = append(vals, iter.Val())
-		}
-		Expect(iter.Err()).NotTo(HaveOccurred())
-		Expect(vals).To(HaveLen(71))
-		Expect(vals).To(ContainElement("K01"))
-		Expect(vals).To(ContainElement("K71"))
-		Expect(vals).NotTo(ContainElement("x"))
-	})
+	// 7.4: The second element is an Array reply of field/value pairs that were scanned. When the NOVALUES flag (since Redis 7.4) is used, only the field names are returned.
+	//It("should hscan without values across multiple pages", Label("NonRedisEnterprise"), func() {
+	//	Expect(hashSeed(71)).NotTo(HaveOccurred())
+	//
+	//	var vals []string
+	//	iter := client.HScanNoValues(ctx, hashKey, 0, "", 10).Iterator()
+	//	for iter.Next(ctx) {
+	//		vals = append(vals, iter.Val())
+	//	}
+	//	Expect(iter.Err()).NotTo(HaveOccurred())
+	//	Expect(vals).To(HaveLen(71))
+	//	Expect(vals).To(ContainElement("K01"))
+	//	Expect(vals).To(ContainElement("K71"))
+	//	Expect(vals).NotTo(ContainElement("x"))
+	//})
 
 	It("should scan to page borders", func() {
 		Expect(seed(20)).NotTo(HaveOccurred())

@@ -11,11 +11,11 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
 
-	"github.com/redis/go-redis/extra/redisotel/v9"
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/extra/redisotel/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
-var tracer = otel.Tracer("github.com/redis/go-redis/example/otel")
+var tracer = otel.Tracer("gitlab.myteksi.net/dbops/Redis/example/otel")
 
 func main() {
 	ctx := context.Background()

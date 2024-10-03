@@ -1,12 +1,12 @@
-module github.com/redis/go-redis/extra/redisprometheus/v9
+module gitlab.myteksi.net/dbops/Redis/extra/redisprometheus/v9
 
 go 1.19
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 require (
 	github.com/prometheus/client_golang v1.14.0
-	github.com/redis/go-redis/v9 v9.6.1
+	gitlab.myteksi.net/dbops/Redis/v9 v9.6.1
 )
 
 require (

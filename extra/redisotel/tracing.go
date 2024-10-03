@@ -13,12 +13,12 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/redis/go-redis/extra/rediscmd/v9"
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/extra/rediscmd/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 const (
-	instrumName = "github.com/redis/go-redis/extra/redisotel"
+	instrumName = "gitlab.myteksi.net/dbops/Redis/extra/redisotel"
 )
 
 func InstrumentTracing(rdb redis.UniversalClient, opts ...TracingOption) error {
@@ -105,7 +105,7 @@ func (th *tracingHook) DialHook(hook redis.DialHook) redis.DialHook {
 
 func (th *tracingHook) ProcessHook(hook redis.ProcessHook) redis.ProcessHook {
 	return func(ctx context.Context, cmd redis.Cmder) error {
-		fn, file, line := funcFileLine("github.com/redis/go-redis")
+		fn, file, line := funcFileLine("gitlab.myteksi.net/dbops/Redis")
 
 		attrs := make([]attribute.KeyValue, 0, 8)
 		attrs = append(attrs,
@@ -137,7 +137,7 @@ func (th *tracingHook) ProcessPipelineHook(
 	hook redis.ProcessPipelineHook,
 ) redis.ProcessPipelineHook {
 	return func(ctx context.Context, cmds []redis.Cmder) error {
-		fn, file, line := funcFileLine("github.com/redis/go-redis")
+		fn, file, line := funcFileLine("gitlab.myteksi.net/dbops/Redis")
 
 		attrs := make([]attribute.KeyValue, 0, 8)
 		attrs = append(attrs,

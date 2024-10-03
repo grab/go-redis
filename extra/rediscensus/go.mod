@@ -1,14 +1,14 @@
-module github.com/redis/go-redis/extra/rediscensus/v9
+module gitlab.myteksi.net/dbops/Redis/extra/rediscensus/v9
 
 go 1.19
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
-replace github.com/redis/go-redis/extra/rediscmd/v9 => ../rediscmd
+replace gitlab.myteksi.net/dbops/Redis/extra/rediscmd/v9 => ../rediscmd
 
 require (
-	github.com/redis/go-redis/extra/rediscmd/v9 v9.6.1
-	github.com/redis/go-redis/v9 v9.6.1
+	gitlab.myteksi.net/dbops/Redis/extra/rediscmd/v9 v9.6.1
+	gitlab.myteksi.net/dbops/Redis/v9 v9.6.1
 	go.opencensus.io v0.24.0
 )
 
