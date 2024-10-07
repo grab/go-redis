@@ -109,13 +109,6 @@ func (p *DynamicConnPool) Get(ctx context.Context) (*Conn, error) {
 		return nil, ctx.Err()
 	}
 
-	p.connsMu.Lock()
-	if p.cfg.MaxActiveConns > 0 && p.poolSize >= p.cfg.MaxActiveConns {
-		p.connsMu.Unlock()
-		return nil, ErrPoolExhausted
-	}
-	p.connsMu.Unlock()
-
 	cn, err := p.getFromIdlePool()
 	if cn != nil || err != nil {
 		return cn, err
