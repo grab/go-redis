@@ -266,6 +266,7 @@ func (c *baseClient) withConn(
 	}
 
 	err := c.executeWithCircuitBreaker(ctx, fn, limiter)
+
 	limiter.ReportResult(err)
 	return err
 }
