@@ -265,25 +265,39 @@ func (c *baseClient) withConn(
 		return err
 	}
 
-	// Request is allowed occasionally to close the cb and cb is still in open state
-	// Init the connection to avoid nested hystrix call during connection establishment
-	if limiter.IsCBOpen() {
-		cn, err := c.getConn(ctx)
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			c.releaseConn(ctx, cn, err)
-		}()
-	}
-
-	err := limiter.Execute(func() error {
-		return c._withConn(ctx, fn)
-	})
-
+	err := c.executeWithCircuitBreaker(ctx, fn, limiter)
 	limiter.ReportResult(err)
 	return err
+}
+
+func (c *baseClient) executeWithCircuitBreaker(
+	ctx context.Context,
+	fn func(context.Context, *pool.Conn) error,
+	limiter Limiter,
+) error {
+	// When circuit is open, try to establish connection first
+	// This is needed for circuit breaker recovery
+	if limiter.IsCBOpen() {
+		if err := c.preConnect(ctx); err != nil {
+			return err
+		}
+	}
+
+	return limiter.Execute(func() error {
+		return c._withConn(ctx, fn)
+	})
+}
+
+func (c *baseClient) preConnect(ctx context.Context) error {
+	cn, err := c.getConn(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		c.releaseConn(ctx, cn, err)
+	}()
+	return nil
 }
 
 func (c *baseClient) _withConn(
