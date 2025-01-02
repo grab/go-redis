@@ -36,6 +36,8 @@ type Stats struct {
 	TotalConns uint32 // number of total connections in the pool
 	IdleConns  uint32 // number of idle connections in the pool
 	StaleConns uint32 // number of stale connections removed from the pool
+	QueueCap   uint32 // number of connections can be buffered in the queue
+	QueueLen   uint32 // number of actual connections in the queue
 }
 
 type Pooler interface {
@@ -65,6 +67,7 @@ type Options struct {
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
+	ConnReqQueueSize   int
 }
 
 type lastDialErrorWrap struct {

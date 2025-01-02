@@ -112,6 +112,11 @@ type Options struct {
 	// but idle connections are still discarded by the client
 	// if IdleTimeout is set.
 	IdleCheckFrequency time.Duration
+	// Buffered chan size of connection opener, this value should be larger than the maximum typical
+	// value used for poolSize, otherwise it might block ALL calls in Pool until pending connection request is satisfied
+	// Default is 1,000,000 and minimum is 100x of the pool size
+	// Expect to see memory usage increase when queue size is increasing
+	ConnReqQueueSize int
 
 	// Enables read only queries on slave nodes.
 	readOnly bool
@@ -196,6 +201,15 @@ func (opt *Options) init() {
 		opt.MaxRetryBackoff = 0
 	case 0:
 		opt.MaxRetryBackoff = 512 * time.Millisecond
+	}
+
+	if opt.ConnReqQueueSize <= 0 {
+		// If ConnReqQueueSize is less than or equal to 0, set it to 1,000,000
+		opt.ConnReqQueueSize = 1000000
+	}
+	if opt.ConnReqQueueSize <= 100*opt.PoolSize {
+		// If ConnReqQueueSize is less than or equal to 100 times PoolSize, set it to 100 times PoolSize
+		opt.ConnReqQueueSize = 100 * opt.PoolSize
 	}
 }
 
