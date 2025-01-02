@@ -79,6 +79,7 @@ type ClusterOptions struct {
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
+	ConnReqQueueSize   int
 
 	TLSConfig *tls.Config
 }
@@ -125,6 +126,15 @@ func (opt *ClusterOptions) init() {
 		opt.MaxRetryBackoff = 0
 	case 0:
 		opt.MaxRetryBackoff = 512 * time.Millisecond
+	}
+
+	if opt.ConnReqQueueSize <= 0 {
+		// If ConnReqQueueSize is less than or equal to 0, set it to 1,000,000
+		opt.ConnReqQueueSize = 1000000
+	}
+	if opt.ConnReqQueueSize <= 100*opt.PoolSize {
+		// If ConnReqQueueSize is less than or equal to 100 times PoolSize, set it to 100 times PoolSize
+		opt.ConnReqQueueSize = 100 * opt.PoolSize
 	}
 
 	if opt.NewClient == nil {
