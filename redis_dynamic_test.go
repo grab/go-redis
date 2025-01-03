@@ -164,6 +164,10 @@ var limiterError = fmt.Errorf("limiter error")
 type errorLimiter struct {
 }
 
+func (l *errorLimiter) IsCBOpen() bool {
+	return true
+}
+
 func (l *errorLimiter) Execute(f func() error) error {
 	return nil
 }
@@ -179,6 +183,10 @@ func (*errorLimiter) ReportResult(result error) {
 type normalLimiter struct {
 	count  int
 	errors []error
+}
+
+func (l *normalLimiter) IsCBOpen() bool {
+	return false
 }
 
 func (l *normalLimiter) Execute(f func() error) error {

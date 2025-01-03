@@ -10,6 +10,10 @@ import (
 )
 
 const (
+	// connReqsQueueSize: buffered chan size of connection opener, this value should be larger than the maximum typical
+	// value used for poolSize, otherwise it might block ALL calls in Pool until pending connection request is satisfied
+	connReqsQueueSize = 1000000
+
 	minIdleCheckFrequency = time.Second
 
 	// tryDialFrequency: frequency used to try dial underlying resource to check if it is recovered after a consecutive
@@ -62,10 +66,19 @@ type DynamicConnPool struct {
 var _ DynamicPooler = (*DynamicConnPool)(nil)
 
 func NewDynamicConnPool(opt *Options) *DynamicConnPool {
+	connReqQueueSize := opt.ConnReqQueueSize
+	if connReqQueueSize <= 0 {
+		connReqQueueSize = connReqsQueueSize
+	}
+	// the buffer size should be at least 100x of the pool size to handle spiking
+	if connReqQueueSize <= 100*opt.PoolSize {
+		connReqQueueSize = 100 * opt.PoolSize
+	}
+
 	p := &DynamicConnPool{
 		opt:      opt,
 		closedCh: make(chan struct{}),
-		connReqs: make(chan ctxConnChan, opt.ConnReqQueueSize),
+		connReqs: make(chan ctxConnChan, connReqQueueSize),
 	}
 
 	p.connsMu.Lock()
@@ -198,10 +211,12 @@ func (p *DynamicConnPool) IdleLen() int {
 	return p.idleConnsLen
 }
 
+// QueueLen returns number of connections in the queue
 func (p *DynamicConnPool) QueueLen() int {
 	return len(p.connReqs)
 }
 
+// QueueCap returns the capacity of the queue
 func (p *DynamicConnPool) QueueCap() int {
 	return cap(p.connReqs)
 }
