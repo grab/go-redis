@@ -112,6 +112,11 @@ type Options struct {
 	// but idle connections are still discarded by the client
 	// if IdleTimeout is set.
 	IdleCheckFrequency time.Duration
+	// Buffered chan size of connection opener, this value should be larger than the maximum typical
+	// value used for poolSize, otherwise it might block ALL calls in Pool until pending connection request is satisfied
+	// Default is 1,000,000 and minimum is 100x of the pool size
+	// Expect memory usage increase when queue size is increasing, no dynamic reloading allowed
+	ConnReqQueueSize int
 
 	// Enables read only queries on slave nodes.
 	readOnly bool

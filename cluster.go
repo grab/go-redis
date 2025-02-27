@@ -79,6 +79,7 @@ type ClusterOptions struct {
 	PoolTimeout        time.Duration
 	IdleTimeout        time.Duration
 	IdleCheckFrequency time.Duration
+	ConnReqQueueSize   int
 
 	TLSConfig *tls.Config
 }
@@ -157,6 +158,7 @@ func (opt *ClusterOptions) clientOptions() *Options {
 		PoolTimeout:        opt.PoolTimeout,
 		IdleTimeout:        opt.IdleTimeout,
 		IdleCheckFrequency: disableIdleCheck,
+		ConnReqQueueSize:   opt.ConnReqQueueSize,
 
 		TLSConfig: opt.TLSConfig,
 		// If ClusterSlots is populated, then we probably have an artificial
