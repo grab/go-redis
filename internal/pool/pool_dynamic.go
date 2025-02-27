@@ -66,10 +66,19 @@ type DynamicConnPool struct {
 var _ DynamicPooler = (*DynamicConnPool)(nil)
 
 func NewDynamicConnPool(opt *Options) *DynamicConnPool {
+	connReqQueueSize := opt.ConnReqQueueSize
+	if connReqQueueSize <= 0 {
+		connReqQueueSize = connReqsQueueSize
+	}
+	// the buffer size should be at least 100x of the pool size to handle spiking
+	if connReqQueueSize <= 100*opt.PoolSize {
+		connReqQueueSize = 100 * opt.PoolSize
+	}
+
 	p := &DynamicConnPool{
 		opt:      opt,
 		closedCh: make(chan struct{}),
-		connReqs: make(chan ctxConnChan, connReqsQueueSize),
+		connReqs: make(chan ctxConnChan, connReqQueueSize),
 	}
 
 	p.connsMu.Lock()
@@ -202,6 +211,16 @@ func (p *DynamicConnPool) IdleLen() int {
 	return p.idleConnsLen
 }
 
+// QueueLen returns number of connections in the queue
+func (p *DynamicConnPool) QueueLen() int {
+	return len(p.connReqs)
+}
+
+// QueueCap returns the capacity of the queue
+func (p *DynamicConnPool) QueueCap() int {
+	return cap(p.connReqs)
+}
+
 // Stats returns statistic about connection pool.
 func (p *DynamicConnPool) Stats() *Stats {
 	return &Stats{
@@ -212,6 +231,8 @@ func (p *DynamicConnPool) Stats() *Stats {
 		TotalConns: uint32(p.Len()),
 		IdleConns:  uint32(p.IdleLen()),
 		StaleConns: atomic.LoadUint32(&p.stats.StaleConns),
+		QueueLen:   uint32(p.QueueLen()),
+		QueueCap:   uint32(p.QueueCap()),
 	}
 }
 

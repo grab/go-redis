@@ -13,7 +13,7 @@ import (
 	"gitlab.myteksi.net/dbops/Redis/v8/internal/pool"
 )
 
-func assertPoolStats(pooler pool.DynamicPooler, hits, misses, timeouts, totals, idles, stales uint32) {
+func assertPoolStats(pooler pool.DynamicPooler, hits, misses, timeouts, totals, idles, stales, capacity uint32) {
 	Expect(pooler.Stats()).To(Equal(&pool.Stats{
 		Hits:       hits,
 		Misses:     misses,
@@ -21,6 +21,7 @@ func assertPoolStats(pooler pool.DynamicPooler, hits, misses, timeouts, totals, 
 		TotalConns: totals,
 		IdleConns:  idles,
 		StaleConns: stales,
+		QueueCap:   capacity,
 	}))
 }
 
@@ -63,21 +64,60 @@ var _ = Describe("ConnPool", func() {
 			PoolTimeout:        time.Hour,
 			IdleTimeout:        time.Millisecond,
 			IdleCheckFrequency: time.Millisecond * 500,
+			ConnReqQueueSize:   1000000,
 		})
 		wg.Wait()
 
 		// MinIdleConns should optimistically increase poolSize though actual conn creation is pending
-		assertPoolStats(connPool, 0, 0, 0, 10, 10, 0)
+		assertPoolStats(connPool, 0, 0, 0, 10, 10, 0, 1000000)
 
 		// no error since no idle conn queued yet during pool close and stats remains
 		Expect(connPool.Close()).NotTo(HaveOccurred())
-		assertPoolStats(connPool, 0, 0, 0, 10, 10, 0)
+		assertPoolStats(connPool, 0, 0, 0, 10, 10, 0, 1000000)
 
 		close(closedChan) // release the channel to make all dail success
 
 		// wait for 5ms and all conn put back idle list should fail and decrease pool size
 		time.Sleep(time.Millisecond * 5)
-		assertPoolStats(connPool, 0, 0, 0, 0, 0, 0)
+		assertPoolStats(connPool, 0, 0, 0, 0, 0, 0, 1000000)
+	})
+
+	It("should create idle connections then safe close and queue size is bigger than 100x of pool size", func() {
+		const minIdleConns = 10
+
+		var (
+			wg         sync.WaitGroup
+			closedChan = make(chan struct{})
+		)
+		wg.Add(minIdleConns)
+		connPool = pool.NewDynamicConnPool(&pool.Options{
+			Dialer: func(ctx context.Context) (net.Conn, error) {
+				wg.Done()
+				<-closedChan
+				return &net.TCPConn{}, nil
+			},
+			PoolSize:           10,
+			MinIdleConns:       minIdleConns,
+			MaxIdleConns:       10,
+			PoolTimeout:        time.Hour,
+			IdleTimeout:        time.Millisecond,
+			IdleCheckFrequency: time.Millisecond * 500,
+			ConnReqQueueSize:   100,
+		})
+		wg.Wait()
+
+		// MinIdleConns should optimistically increase poolSize though actual conn creation is pending
+		assertPoolStats(connPool, 0, 0, 0, 10, 10, 0, 1000)
+
+		// no error since no idle conn queued yet during pool close and stats remains
+		Expect(connPool.Close()).NotTo(HaveOccurred())
+		assertPoolStats(connPool, 0, 0, 0, 10, 10, 0, 1000)
+
+		close(closedChan) // release the channel to make all dail success
+
+		// wait for 5ms and all conn put back idle list should fail and decrease pool size
+		time.Sleep(time.Millisecond * 5)
+		assertPoolStats(connPool, 0, 0, 0, 0, 0, 0, 1000)
 	})
 
 	It("should unblock client when conn is removed", func() {
@@ -642,7 +682,7 @@ var _ = Describe("dynamic update", func() {
 			getConnsExpectNoErr(connPool, minIdleConns-1) // use all connections
 
 			// all get request should hit and use up all idle connections
-			assertPoolStats(connPool, minIdleConns-1, 0, 0, minIdleConns-1, 0, 0)
+			assertPoolStats(connPool, minIdleConns-1, 0, 0, minIdleConns-1, 0, 0, 1000000)
 
 			done := make(chan struct{})
 			go func() {

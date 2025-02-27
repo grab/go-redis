@@ -221,5 +221,6 @@ func newDynamicConnPool(opt *Options) *pool.DynamicConnPool {
 		PoolTimeout:        opt.PoolTimeout,
 		IdleTimeout:        opt.IdleTimeout,
 		IdleCheckFrequency: opt.IdleCheckFrequency,
+		ConnReqQueueSize:   opt.ConnReqQueueSize,
 	})
 }
