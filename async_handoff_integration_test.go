@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal/pool"
-	"github.com/redis/go-redis/v9/logging"
-	"github.com/redis/go-redis/v9/maintnotifications"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/logging"
+	"gitlab.myteksi.net/dbops/Redis/v9/maintnotifications"
 )
 
 // mockNetConn implements net.Conn for testing

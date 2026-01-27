@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 
-	"github.com/redis/go-redis/v9/internal/hashtag"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/hashtag"
 )
 
 type SetCmdable interface {

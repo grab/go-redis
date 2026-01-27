@@ -1,14 +1,14 @@
-module github.com/redis/go-redis/extra/redisotel/v9
+module gitlab.myteksi.net/dbops/Redis/extra/redisotel/v9
 
 go 1.19
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
-replace github.com/redis/go-redis/extra/rediscmd/v9 => ../rediscmd
+replace gitlab.myteksi.net/dbops/Redis/extra/rediscmd/v9 => ../rediscmd
 
 require (
-	github.com/redis/go-redis/extra/rediscmd/v9 v9.17.3
-	github.com/redis/go-redis/v9 v9.17.3
+	gitlab.myteksi.net/dbops/Redis/extra/rediscmd/v9 v9.17.3
+	gitlab.myteksi.net/dbops/Redis/v9 v9.17.3
 	go.opentelemetry.io/otel v1.22.0
 	go.opentelemetry.io/otel/metric v1.22.0
 	go.opentelemetry.io/otel/sdk v1.22.0
@@ -21,9 +21,4 @@ require (
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	golang.org/x/sys v0.16.0 // indirect
-)
-
-retract (
-	v9.7.2 // This version was accidentally released. Please use version 9.7.3 instead.
-	v9.5.3 // This version was accidentally released. Please use version 9.6.0 instead.
 )

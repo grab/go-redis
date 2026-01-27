@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"github.com/redis/go-redis/v9/push"
+	"gitlab.myteksi.net/dbops/Redis/v9/push"
 )
 
 // NewPushNotificationProcessor creates a new push notification processor

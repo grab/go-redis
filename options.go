@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9/auth"
-	"github.com/redis/go-redis/v9/internal/pool"
-	"github.com/redis/go-redis/v9/internal/proto"
-	"github.com/redis/go-redis/v9/internal/util"
-	"github.com/redis/go-redis/v9/maintnotifications"
-	"github.com/redis/go-redis/v9/push"
+	"gitlab.myteksi.net/dbops/Redis/v9/auth"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/maintnotifications"
+	"gitlab.myteksi.net/dbops/Redis/v9/push"
 )
 
 // Limiter is the interface of a rate limiter or a circuit breaker.
@@ -30,6 +30,15 @@ type Limiter interface {
 	// ReportResult reports the result of the previously allowed operation.
 	// nil indicates a success, non-nil error usually indicates a failure.
 	ReportResult(result error)
+}
+
+// CircuitBreakerLimiter extends Limiter with circuit breaker specific operations.
+type CircuitBreakerLimiter interface {
+	Limiter
+	// IsCBOpen returns true if the circuit breaker is in open state.
+	IsCBOpen() bool
+	// Execute runs the given function with circuit breaker protection.
+	Execute(fn func() error) error
 }
 
 // Options keeps the settings to set up redis connection.

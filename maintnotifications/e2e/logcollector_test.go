@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	logs2 "github.com/redis/go-redis/v9/internal/maintnotifications/logs"
+	logs2 "gitlab.myteksi.net/dbops/Redis/v9/internal/maintnotifications/logs"
 )
 
 // logs is a slice of strings that provides additional functionality

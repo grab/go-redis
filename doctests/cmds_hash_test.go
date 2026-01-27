@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 // HIDE_END

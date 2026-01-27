@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/redis/go-redis/v9/maintnotifications"
+	"gitlab.myteksi.net/dbops/Redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9/maintnotifications"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/redis/go-redis/internal/customvet
+module gitlab.myteksi.net/dbops/Redis/internal/customvet
 
 go 1.17
 

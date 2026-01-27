@@ -9,14 +9,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/redis/go-redis/v9/auth"
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/auth/streaming"
-	"github.com/redis/go-redis/v9/internal/hscan"
-	"github.com/redis/go-redis/v9/internal/pool"
-	"github.com/redis/go-redis/v9/internal/proto"
-	"github.com/redis/go-redis/v9/maintnotifications"
-	"github.com/redis/go-redis/v9/push"
+	"gitlab.myteksi.net/dbops/Redis/v9/auth"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/auth/streaming"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/hscan"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/maintnotifications"
+	"gitlab.myteksi.net/dbops/Redis/v9/push"
 )
 
 // Scanner internal/hscan.Scanner exposed interface.
@@ -624,9 +624,10 @@ func (c *baseClient) initConn(ctx context.Context, cn *pool.Conn) error {
 }
 
 func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) {
-	if c.opt.Limiter != nil {
-		c.opt.Limiter.ReportResult(err)
-	}
+	// Note: ReportResult is now called in withConn for circuit breaker limiters
+	// We only call it here for non-circuit-breaker limiters or when called from _withConn
+	// Since _withConn is only called from executeWithCircuitBreaker or when limiter is nil,
+	// we skip reporting here to avoid double-reporting
 
 	if isBadConn(err, false, c.opt.Addr) {
 		c.connPool.Remove(ctx, cn, err)
@@ -642,6 +643,24 @@ func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) 
 func (c *baseClient) withConn(
 	ctx context.Context, fn func(context.Context, *pool.Conn) error,
 ) error {
+	limiter := c.opt.Limiter
+	if limiter == nil {
+		return c._withConn(ctx, fn)
+	}
+
+	if err := limiter.Allow(); err != nil {
+		return err
+	}
+
+	err := c.executeWithCircuitBreaker(ctx, fn, limiter)
+
+	limiter.ReportResult(err)
+	return err
+}
+
+func (c *baseClient) _withConn(
+	ctx context.Context, fn func(context.Context, *pool.Conn) error,
+) error {
 	cn, err := c.getConn(ctx)
 	if err != nil {
 		return err
@@ -655,6 +674,40 @@ func (c *baseClient) withConn(
 	fnErr = fn(ctx, cn)
 
 	return fnErr
+}
+
+func (c *baseClient) executeWithCircuitBreaker(
+	ctx context.Context,
+	fn func(context.Context, *pool.Conn) error,
+	limiter Limiter,
+) error {
+	// Check if limiter implements CircuitBreakerLimiter
+	cbLimiter, ok := limiter.(CircuitBreakerLimiter)
+	if !ok {
+		// Fall back to simple execution if not a circuit breaker limiter
+		return c._withConn(ctx, fn)
+	}
+
+	// When circuit is open, try to establish connection first
+	// This is needed for circuit breaker recovery
+	if cbLimiter.IsCBOpen() {
+		if err := c.preConnect(ctx); err != nil {
+			return err
+		}
+	}
+
+	return cbLimiter.Execute(func() error {
+		return c._withConn(ctx, fn)
+	})
+}
+
+func (c *baseClient) preConnect(ctx context.Context) error {
+	cn, err := c.getConn(ctx)
+	if err != nil {
+		return err
+	}
+	c.connPool.Put(ctx, cn)
+	return nil
 }
 
 func (c *baseClient) dial(ctx context.Context, network, addr string) (net.Conn, error) {

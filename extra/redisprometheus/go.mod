@@ -1,12 +1,12 @@
-module github.com/redis/go-redis/extra/redisprometheus/v9
+module gitlab.myteksi.net/dbops/Redis/extra/redisprometheus/v9
 
 go 1.19
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 require (
 	github.com/prometheus/client_golang v1.14.0
-	github.com/redis/go-redis/v9 v9.17.3
+	gitlab.myteksi.net/dbops/Redis/v9 v9.17.3
 )
 
 require (
@@ -20,9 +20,4 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
-)
-
-retract (
-	v9.7.2 // This version was accidentally released. Please use version 9.7.3 instead.
-	v9.5.3 // This version was accidentally released. Please use version 9.6.0 instead.
 )

@@ -1,10 +1,10 @@
-module github.com/redis/go-redis/example/cluster-mget
+module gitlab.myteksi.net/dbops/Redis/example/cluster-mget
 
 go 1.18
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
-require github.com/redis/go-redis/v9 v9.16.0
+require gitlab.myteksi.net/dbops/Redis/v9 v9.16.0
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
 )
 
 func Sleep(ctx context.Context, dur time.Duration) error {

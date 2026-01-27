@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/redis/go-redis/v9/logging"
+	"gitlab.myteksi.net/dbops/Redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9/logging"
 )
 
 // Global log collector

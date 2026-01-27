@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 func ExampleClient_query_geo() {

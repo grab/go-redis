@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/redis/go-redis/v9/auth"
-	"github.com/redis/go-redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/auth"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
 )
 
 // Manager coordinates streaming credentials and re-authentication for a connection pool.

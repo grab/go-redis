@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redis/go-redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
 )
 
 type LogLevelT = internal.LogLevelT

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal/hashtag"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/hashtag"
 )
 
 type SortedSetCmdable interface {

@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/hscan"
-	"github.com/redis/go-redis/v9/internal/proto"
-	"github.com/redis/go-redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/hscan"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
 )
 
 // keylessCommands contains Redis commands that have empty key specifications (9th slot empty)

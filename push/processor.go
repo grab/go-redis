@@ -3,8 +3,8 @@ package push
 import (
 	"context"
 
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
 )
 
 // NotificationProcessor defines the interface for push notification processors.

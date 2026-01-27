@@ -13,8 +13,8 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/redis/go-redis/extra/rediscmd/v9"
-	"github.com/redis/go-redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/extra/rediscmd/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9"
 )
 
 const (

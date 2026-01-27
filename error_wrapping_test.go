@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/redis/go-redis/v9"
-	"github.com/redis/go-redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
 )
 
 // TestTypedErrorsWithHookWrapping demonstrates that typed errors work correctly

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/redis/go-redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
 )
 
 // appendJSONIfDebug appends JSON data to a message only if the global log level is Debug

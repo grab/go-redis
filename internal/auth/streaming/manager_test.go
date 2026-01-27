@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9/auth"
-	"github.com/redis/go-redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/auth"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
 )
 
 // Test that Listener returns the newly created listener, not nil

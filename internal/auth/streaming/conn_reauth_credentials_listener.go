@@ -1,8 +1,8 @@
 package streaming
 
 import (
-	"github.com/redis/go-redis/v9/auth"
-	"github.com/redis/go-redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/auth"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
 )
 
 // ConnReAuthCredentialsListener is a credentials listener for a specific connection

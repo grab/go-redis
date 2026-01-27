@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	logs2 "github.com/redis/go-redis/v9/internal/maintnotifications/logs"
-	"github.com/redis/go-redis/v9/logging"
-	"github.com/redis/go-redis/v9/maintnotifications"
+	logs2 "gitlab.myteksi.net/dbops/Redis/v9/internal/maintnotifications/logs"
+	"gitlab.myteksi.net/dbops/Redis/v9/logging"
+	"gitlab.myteksi.net/dbops/Redis/v9/maintnotifications"
 )
 
 // TestPushNotifications tests Redis Enterprise push notifications (MOVING, MIGRATING, MIGRATED)

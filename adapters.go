@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal/interfaces"
-	"github.com/redis/go-redis/v9/push"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/interfaces"
+	"gitlab.myteksi.net/dbops/Redis/v9/push"
 )
 
 // ErrInvalidCommand is returned when an invalid command is passed to ExecuteCommand.

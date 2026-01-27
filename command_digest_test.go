@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/redis/go-redis/v9/internal/proto"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/proto"
 )
 
 func TestDigestCmd(t *testing.T) {

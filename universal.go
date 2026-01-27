@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/redis/go-redis/v9/auth"
-	"github.com/redis/go-redis/v9/maintnotifications"
+	"gitlab.myteksi.net/dbops/Redis/v9/auth"
+	"gitlab.myteksi.net/dbops/Redis/v9/maintnotifications"
 )
 
 // UniversalOptions information is required by UniversalClient to establish

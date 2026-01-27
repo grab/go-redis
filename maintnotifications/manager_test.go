@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9/internal/interfaces"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/interfaces"
 )
 
 // MockClient implements interfaces.ClientInterface for testing

@@ -1,11 +1,11 @@
-module github.com/redis/go-redis/example/digest-optimistic-locking
+module gitlab.myteksi.net/dbops/Redis/example/digest-optimistic-locking
 
 go 1.18
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
 require (
-	github.com/redis/go-redis/v9 v9.17.3
+	gitlab.myteksi.net/dbops/Redis/v9 v9.17.3
 	github.com/zeebo/xxh3 v1.0.2
 )
 

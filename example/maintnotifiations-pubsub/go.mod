@@ -1,10 +1,10 @@
-module github.com/redis/go-redis/example/pubsub
+module gitlab.myteksi.net/dbops/Redis/example/pubsub
 
 go 1.18
 
-replace github.com/redis/go-redis/v9 => ../..
+replace gitlab.myteksi.net/dbops/Redis/v9 => ../..
 
-require github.com/redis/go-redis/v9 v9.11.0
+require gitlab.myteksi.net/dbops/Redis/v9 v9.11.0
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

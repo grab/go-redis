@@ -12,13 +12,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redis/go-redis/v9/auth"
-	"github.com/redis/go-redis/v9/internal"
-	"github.com/redis/go-redis/v9/internal/pool"
-	"github.com/redis/go-redis/v9/internal/rand"
-	"github.com/redis/go-redis/v9/internal/util"
-	"github.com/redis/go-redis/v9/maintnotifications"
-	"github.com/redis/go-redis/v9/push"
+	"gitlab.myteksi.net/dbops/Redis/v9/auth"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/pool"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/rand"
+	"gitlab.myteksi.net/dbops/Redis/v9/internal/util"
+	"gitlab.myteksi.net/dbops/Redis/v9/maintnotifications"
+	"gitlab.myteksi.net/dbops/Redis/v9/push"
 )
 
 //------------------------------------------------------------------------------
