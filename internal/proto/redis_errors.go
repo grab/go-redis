@@ -290,11 +290,23 @@ func IsReadOnlyError(err error) bool {
 	}
 	// Check if wrapped error is a RedisError with READONLY prefix
 	var redisErr RedisError
-	if errors.As(err, &redisErr) && strings.HasPrefix(redisErr.Error(), "READONLY ") {
-		return true
+	if errors.As(err, &redisErr) {
+		errMsg := redisErr.Error()
+		if strings.HasPrefix(errMsg, "READONLY ") {
+			return true
+		}
+		// For Lua scripts, the read-only error string contains "-READONLY" rather than beginning with "READONLY "
+		if strings.Contains(errMsg, "-READONLY ") {
+			return true
+		}
 	}
 	// Fallback to string checking for backward compatibility
-	return strings.HasPrefix(err.Error(), "READONLY ")
+	errMsg := err.Error()
+	if strings.HasPrefix(errMsg, "READONLY ") {
+		return true
+	}
+	// For Lua scripts, the read-only error string contains "-READONLY" rather than beginning with "READONLY "
+	return strings.Contains(errMsg, "-READONLY ")
 }
 
 // IsMovedError checks if an error is a MovedError, even if wrapped.
