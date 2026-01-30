@@ -262,22 +262,9 @@ func (c *baseClient) String() string {
 }
 
 func (c *baseClient) getConn(ctx context.Context) (*pool.Conn, error) {
-	if c.opt.Limiter != nil {
-		err := c.opt.Limiter.Allow()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	cn, err := c._getConn(ctx)
-	if err != nil {
-		if c.opt.Limiter != nil {
-			c.opt.Limiter.ReportResult(err)
-		}
-		return nil, err
-	}
-
-	return cn, nil
+	// Note: Limiter check is handled in withConn() to avoid double-checking
+	// when called from within circuit breaker execution. This matches v8 design.
+	return c._getConn(ctx)
 }
 
 func (c *baseClient) _getConn(ctx context.Context) (*pool.Conn, error) {
@@ -696,6 +683,9 @@ func (c *baseClient) executeWithCircuitBreaker(
 		}
 	}
 
+	// Execute with circuit breaker protection
+	// Note: getConn() no longer has limiter check, avoiding double-checking
+	// when allowing single test requests. Limiter check is only in withConn().
 	return cbLimiter.Execute(func() error {
 		return c._withConn(ctx, fn)
 	})
