@@ -623,12 +623,7 @@ func (c *baseClient) initConn(ctx context.Context, cn *pool.Conn) error {
 	return nil
 }
 
-func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) {
-	// Note: ReportResult is now called in withConn for circuit breaker limiters
-	// We only call it here for non-circuit-breaker limiters or when called from _withConn
-	// Since _withConn is only called from executeWithCircuitBreaker or when limiter is nil,
-	// we skip reporting here to avoid double-reporting
-
+func (c *baseClient) _releaseConn(ctx context.Context, cn *pool.Conn, err error) {
 	if isBadConn(err, false, c.opt.Addr) {
 		c.connPool.Remove(ctx, cn, err)
 	} else {
@@ -638,6 +633,13 @@ func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) 
 		}
 		c.connPool.Put(ctx, cn)
 	}
+}
+
+func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) {
+	if c.opt.Limiter != nil {
+		c.opt.Limiter.ReportResult(err)
+	}
+	c._releaseConn(ctx, cn, err)
 }
 
 func (c *baseClient) withConn(
@@ -661,14 +663,17 @@ func (c *baseClient) withConn(
 func (c *baseClient) _withConn(
 	ctx context.Context, fn func(context.Context, *pool.Conn) error,
 ) error {
-	cn, err := c.getConn(ctx)
+	// Use _getConn/_releaseConn to bypass limiter checks.
+	// Limiter is handled by the caller (withConn) to avoid double-checking
+	// when called from within circuit breaker Execute.
+	cn, err := c._getConn(ctx)
 	if err != nil {
 		return err
 	}
 
 	var fnErr error
 	defer func() {
-		c.releaseConn(ctx, cn, fnErr)
+		c._releaseConn(ctx, cn, fnErr)
 	}()
 
 	fnErr = fn(ctx, cn)
@@ -696,13 +701,19 @@ func (c *baseClient) executeWithCircuitBreaker(
 		}
 	}
 
+	// Execute with circuit breaker protection.
+	// _withConn uses _getConn/_releaseConn which bypass the limiter,
+	// avoiding double-checking since Allow() was already called in withConn().
 	return cbLimiter.Execute(func() error {
 		return c._withConn(ctx, fn)
 	})
 }
 
 func (c *baseClient) preConnect(ctx context.Context) error {
-	cn, err := c.getConn(ctx)
+	// Use _getConn to bypass limiter checks.
+	// This is called from executeWithCircuitBreaker after Allow() has already passed,
+	// to test connectivity before cb.Do() runs.
+	cn, err := c._getConn(ctx)
 	if err != nil {
 		return err
 	}
