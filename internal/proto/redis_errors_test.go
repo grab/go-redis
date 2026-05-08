@@ -9,12 +9,12 @@ import (
 // TestTypedRedisErrors tests that typed Redis errors are created correctly
 func TestTypedRedisErrors(t *testing.T) {
 	tests := []struct {
-		name          string
-		errorMsg      string
-		expectedType  interface{}
-		expectedMsg   string
-		checkFunc     func(error) bool
-		extractAddr   func(error) string
+		name         string
+		errorMsg     string
+		expectedType interface{}
+		expectedMsg  string
+		checkFunc    func(error) bool
+		extractAddr  func(error) string
 	}{
 		{
 			name:         "LOADING error",
@@ -29,6 +29,13 @@ func TestTypedRedisErrors(t *testing.T) {
 			expectedType: &ReadOnlyError{},
 			expectedMsg:  "READONLY You can't write against a read only replica",
 			checkFunc:    IsReadOnlyError,
+		},
+		{
+			name:         "READONLY error from Lua script",
+			errorMsg:     "ERR Error running script (call to f_xxx): @user_script:1: -READONLY You can't write against a read only replica",
+			expectedType: RedisError(""), // Lua script errors are parsed as generic RedisError (string type)
+			expectedMsg:  "ERR Error running script (call to f_xxx): @user_script:1: -READONLY You can't write against a read only replica",
+			checkFunc:    IsReadOnlyError, // But IsReadOnlyError should still detect it
 		},
 		{
 			name:         "MOVED error",
@@ -144,8 +151,17 @@ func TestTypedRedisErrors(t *testing.T) {
 			}
 
 			// Check error type using errors.As
-			if !errors.As(err, &tt.expectedType) {
-				t.Errorf("Error type mismatch: expected %T, got %T", tt.expectedType, err)
+			// Special handling for RedisError (string type) - use type assertion instead
+			if _, ok := tt.expectedType.(RedisError); ok {
+				// For RedisError, check using type assertion
+				if _, ok := err.(RedisError); !ok {
+					t.Errorf("Error type mismatch: expected RedisError, got %T", err)
+				}
+			} else {
+				// For other types, use errors.As
+				if !errors.As(err, &tt.expectedType) {
+					t.Errorf("Error type mismatch: expected %T, got %T", tt.expectedType, err)
+				}
 			}
 
 			// Check using the helper function
@@ -179,6 +195,11 @@ func TestWrappedTypedErrors(t *testing.T) {
 		{
 			name:      "Wrapped READONLY error",
 			errorMsg:  "READONLY You can't write against a read only replica",
+			checkFunc: IsReadOnlyError,
+		},
+		{
+			name:      "Wrapped READONLY error from Lua script",
+			errorMsg:  "ERR Error running script (call to f_xxx): @user_script:1: -READONLY You can't write against a read only replica",
 			checkFunc: IsReadOnlyError,
 		},
 		{
@@ -389,4 +410,3 @@ func TestBackwardCompatibility(t *testing.T) {
 		})
 	}
 }
-
