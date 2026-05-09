@@ -1476,23 +1476,31 @@ func (c *ClusterClient) processPipelineNode(
 	ctx context.Context, node *clusterNode, cmds []Cmder, failedCmds *cmdsMap,
 ) {
 	_ = node.Client.withProcessPipelineHook(ctx, cmds, func(ctx context.Context, cmds []Cmder) error {
-		cn, err := node.Client.getConn(ctx)
-		if err != nil {
+		// Route through withConn so cluster pipelines get circuit breaker
+		// protection (Allow + Execute/cb.Do). The upstream v9 OSS uses
+		// getConn/releaseConn directly here, which is functionally equivalent
+		// without a CB limiter, but bypasses the CB logic in our fork's withConn.
+		// This matches the approach used in go-redis v8.
+		//
+		// The connErr flag tracks whether the fn callback ran. If withConn
+		// returns an error before fn executes (CB rejected, pool exhausted,
+		// dial failed), we handle error mapping here. If fn ran and failed,
+		// processPipelineNodeConn already handled its own errors internally
+		// (MarkAsFailing, mapCmdsByNode, setCmdsErr), so we skip to avoid
+		// double-handling.
+		connErr := true
+		err := node.Client.withConn(ctx, func(ctx context.Context, cn *pool.Conn) error {
+			connErr = false
+			return c.processPipelineNodeConn(ctx, node, cn, cmds, failedCmds)
+		})
+		if err != nil && connErr {
 			if !isContextError(err) {
 				node.MarkAsFailing()
 			}
 			_ = c.mapCmdsByNode(ctx, failedCmds, cmds)
 			setCmdsErr(cmds, err)
-			return err
 		}
-
-		var processErr error
-		defer func() {
-			node.Client.releaseConn(ctx, cn, processErr)
-		}()
-		processErr = c.processPipelineNodeConn(ctx, node, cn, cmds, failedCmds)
-
-		return processErr
+		return err
 	})
 }
 
@@ -1693,20 +1701,17 @@ func (c *ClusterClient) processTxPipelineNode(
 ) {
 	cmds = wrapMultiExec(ctx, cmds)
 	_ = node.Client.withProcessPipelineHook(ctx, cmds, func(ctx context.Context, cmds []Cmder) error {
-		cn, err := node.Client.getConn(ctx)
-		if err != nil {
+		// See processPipelineNode for explanation of withConn and connErr pattern.
+		connErr := true
+		err := node.Client.withConn(ctx, func(ctx context.Context, cn *pool.Conn) error {
+			connErr = false
+			return c.processTxPipelineNodeConn(ctx, node, cn, cmds, failedCmds)
+		})
+		if err != nil && connErr {
 			_ = c.mapCmdsByNode(ctx, failedCmds, cmds)
 			setCmdsErr(cmds, err)
-			return err
 		}
-
-		var processErr error
-		defer func() {
-			node.Client.releaseConn(ctx, cn, processErr)
-		}()
-		processErr = c.processTxPipelineNodeConn(ctx, node, cn, cmds, failedCmds)
-
-		return processErr
+		return err
 	})
 }
 
